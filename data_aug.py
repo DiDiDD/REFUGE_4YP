@@ -3,7 +3,6 @@ import numpy as np
 import cv2
 from glob import glob
 from tqdm import tqdm
-import imageio
 from albumentations import HorizontalFlip, VerticalFlip, Rotate
 
 """ Create a directory """
@@ -12,11 +11,10 @@ def create_dir(path):
         os.makedirs(path)
 
 def load_data(path):
-    train_x = sorted(glob(os.path.join(path, "training", "images", "*.tif")))
-    train_y = sorted(glob(os.path.join(path, "training", "1st_manual", "*.gif")))
-
-    test_x = sorted(glob(os.path.join(path, "test", "images", "*.tif")))
-    test_y = sorted(glob(os.path.join(path, "test", "1st_manual", "*.gif")))
+    train_x = sorted(glob(os.path.join(path, "Images", '*.jpg')))
+    train_y = sorted(glob(os.path.join(path, "G+N", '*.bmp')))
+    test_x = sorted(glob(os.path.join(path, "Images", '*.jpg')))
+    test_y = sorted(glob(os.path.join(path, "G+N", '*.bmp')))
 
     return (train_x, train_y), (test_x, test_y)
 
@@ -29,7 +27,7 @@ def augment_data(images, masks, save_path, augment=True):
 
         """ Reading image and mask """
         x = cv2.imread(x, cv2.IMREAD_COLOR)
-        y = imageio.mimread(y)[0]
+        y = cv2.imread(y)
 
         if augment == True:
             aug = HorizontalFlip(p=1.0)
@@ -59,8 +57,8 @@ def augment_data(images, masks, save_path, augment=True):
             i = cv2.resize(i, size)
             m = cv2.resize(m, size)
 
-            tmp_image_name = f"{name}_{index}.png"
-            tmp_mask_name = f"{name}_{index}.png"
+            tmp_image_name = f"{name}_{index}.jpg"
+            tmp_mask_name = f"{name}_{index}.bmp"
 
             image_path = os.path.join(save_path, "image", tmp_image_name)
             mask_path = os.path.join(save_path, "mask", tmp_mask_name)
@@ -75,7 +73,7 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     """ Load the data """
-    data_path = "/media/nikhil/ML/ml_dataset/Retina blood vessel segmentation/"
+    data_path = "/Users/diwan/Desktop/Data1"
     (train_x, train_y), (test_x, test_y) = load_data(data_path)
 
     print(f"Train: {len(train_x)} - {len(train_y)}")
@@ -88,5 +86,5 @@ if __name__ == "__main__":
     create_dir("new_data/test/mask/")
 
     """ Data augmentation """
-    augment_data(train_x, train_y, "new_data/train/", augment=True)
+    augment_data(train_x, train_y, "new_data/train/", augment=False)
     augment_data(test_x, test_y, "new_data/test/", augment=False)

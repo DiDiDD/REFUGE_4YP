@@ -2,7 +2,7 @@
 import os
 import time
 from glob import glob
-
+from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
@@ -68,9 +68,9 @@ if __name__ == "__main__":
     W = 512
     size = (H, W)
     batch_size = 2
-    num_epochs = 50
-    lr = 1e-4
-    checkpoint_path = "files/checkpoint.pth"
+    num_epochs = 2
+    lr = 1e-3
+    checkpoint_path = "Desktop/checkpoint.pth"
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         num_workers=2
     )
 
-    device = torch.device('cuda')   ## GTX 1060 6GB
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = build_unet()
     model = model.to(device)
 
@@ -101,10 +101,11 @@ if __name__ == "__main__":
     """ Training the model """
     best_valid_loss = float("inf")
 
-    for epoch in range(num_epochs):
+    for epoch in tqdm(range(num_epochs)):
         start_time = time.time()
-
+        print('start')
         train_loss = train(model, train_loader, optimizer, loss_fn, device)
+        print('running?')
         valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
         """ Saving the model """
