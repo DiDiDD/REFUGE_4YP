@@ -68,9 +68,9 @@ if __name__ == "__main__":
     W = 512
     size = (H, W)
     batch_size = 2
-    num_epochs = 2
+    num_epochs = 10
     lr = 1e-3
-    checkpoint_path = "Desktop/checkpoint.pth"
+    checkpoint_path = "/home/mans4021/Desktop/Retina-Blood-Vessel-Segmentation-in-PyTorch/checkpoint.pth"
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)

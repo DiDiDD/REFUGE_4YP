@@ -10,11 +10,11 @@ def create_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def load_data(path):
-    train_x = sorted(glob(os.path.join(path, "Images", '*.jpg')))
-    train_y = sorted(glob(os.path.join(path, "G+N", '*.bmp')))
-    test_x = sorted(glob(os.path.join(path, "Images", '*.jpg')))
-    test_y = sorted(glob(os.path.join(path, "G+N", '*.bmp')))
+def load_data(path_train_x,path_train_y, path_test_x, path_test_y):
+    train_x = sorted(glob(os.path.join(path_train_x, "Images", '*.jpg')))
+    train_y = sorted(glob(os.path.join(path_train_y, "G+N", '*.bmp')))
+    test_x = sorted(glob(os.path.join(path_test_x, '*.jpg')))
+    test_y = sorted(glob(os.path.join(path_test_y, '*.bmp')))
 
     return (train_x, train_y), (test_x, test_y)
 
@@ -73,8 +73,10 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     """ Load the data """
-    data_path = "/Users/diwan/Desktop/Data1"
-    (train_x, train_y), (test_x, test_y) = load_data(data_path)
+    data_path = "/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Test-400"
+    data_path1 = '/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Val-400/REFUGE-Validation400'
+    data_path2 = '/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Val-400/REFUGE-Validation400-GT/Disc_Cup_Masks'
+    (train_x, train_y), (test_x, test_y) = load_data(data_path, data_path, data_path1, data_path2)
 
     print(f"Train: {len(train_x)} - {len(train_y)}")
     print(f"Test: {len(test_x)} - {len(test_y)}")
