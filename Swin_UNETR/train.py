@@ -9,7 +9,7 @@ import torch.nn as nn
 
 from data import DriveDataset
 from MONAI_SWINUNETR_prebuilt import SwinUNETR
-from loss import DiceLoss, DiceBCELoss
+from monai.losses import DiceCELoss
 from utils import seeding, create_dir, epoch_time
 
 def train(model, loader, optimizer, loss_fn, device):
@@ -21,7 +21,7 @@ def train(model, loader, optimizer, loss_fn, device):
         y = y.to(device, dtype=torch.float32)
 
         optimizer.zero_grad()
-        y_pred = net = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=1, use_checkpoint=True, spatial_dims=2)
+        y_pred = model(x)
         loss = loss_fn(y_pred, y)
         loss.backward()
         optimizer.step()
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     batch_size = 2
     num_epochs = 10
     lr = 1e-3
-    checkpoint_path = "/home/mans4021/Desktop/Retina-Blood-Vessel-Segmentation-in-PyTorch/checkpoint.pth"
+    checkpoint_path = "/home/mans4021/Desktop/Retina-Blood-Vessel-Segmentation-in-PyTorch/Swin_UNETR/checkpoint.pth"
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)
@@ -91,21 +91,19 @@ if __name__ == "__main__":
     )
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = SwinUNETR()
+    model = SwinUNETR(img_size=(3,512, 512), in_channels=3, out_channels=1, use_checkpoint=True, spatial_dims=3)
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
-    loss_fn = DiceBCELoss()
+    loss_fn = DiceCELoss()
 
     """ Training the model """
     best_valid_loss = float("inf")
 
     for epoch in tqdm(range(num_epochs)):
         start_time = time.time()
-        print('start')
         train_loss = train(model, train_loader, optimizer, loss_fn, device)
-        print('running?')
         valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
         """ Saving the model """

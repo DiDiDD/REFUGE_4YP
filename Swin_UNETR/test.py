@@ -53,12 +53,12 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (W, H)
-    checkpoint_path = "/home/mans4021/Desktop/Retina-Blood-Vessel-Segmentation-in-PyTorch/checkpoint.pth"
+    checkpoint_path = "/home/mans4021/Desktop/Retina-Blood-Vessel-Segmentation-in-PyTorch/Swin_UNETR/checkpoint.pth"
 
     """ Load the checkpoint """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = build_unet()
+    model = SwinUNETR((3,512,512),3,1)
     model = model.to(device)
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()

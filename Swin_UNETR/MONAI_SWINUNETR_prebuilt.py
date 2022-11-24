@@ -75,20 +75,20 @@ class SwinUNETR(nn.Module):
         Examples::
 
             # for 3D single channel input with size (96,96,96), 4-channel output and feature size of 48.
-            >>> net = SwinUNETR(img_size=(96,96,96), in_channels=1, out_channels=4, feature_size=48)
+            £>>> net = SwinUNETR(img_size=(96,96,96), in_channels=1, out_channels=4, feature_size=48)
 
             # for 3D 4-channel input with size (128,128,128), 3-channel output and (2,4,2,2) layers in each stage.
-            >>> net = SwinUNETR(img_size=(128,128,128), in_channels=4, out_channels=3, depths=(2,4,2,2))
+            $>>> net = SwinUNETR(img_size=(128,128,128), in_channels=4, out_channels=3, depths=(2,4,2,2))
 
             # for 2D single channel input with size (96,96), 2-channel output and gradient checkpointing.
-            >>> net = SwinUNETR(img_size=(96,96), in_channels=3, out_channels=2, use_checkpoint=True, spatial_dims=2)
+            $>>> net = SwinUNETR(img_size=(96,96), in_channels=3, out_channels=2, use_checkpoint=True, spatial_dims=2)
 
         """
 
         super().__init__()
 
         img_size = ensure_tuple_rep(img_size, spatial_dims)  # check if dimensions match
-        patch_size = ensure_tuple_rep(2, spatial_dims)
+        patch_size = ensure_tuple_rep([1,2,2],spatial_dims)
         window_size = ensure_tuple_rep(7, spatial_dims)
 
         if not (spatial_dims == 2 or spatial_dims == 3):
@@ -285,6 +285,7 @@ class SwinUNETR(nn.Module):
 
     def forward(self, x_in):
         hidden_states_out = self.swinViT(x_in, self.normalize)
+        print('finish hidden_states')
         enc0 = self.encoder1(x_in)
         enc1 = self.encoder2(hidden_states_out[0])
         enc2 = self.encoder3(hidden_states_out[1])
@@ -1008,3 +1009,13 @@ class SwinTransformer(nn.Module):
         x4 = self.layers4[0](x3.contiguous())
         x4_out = self.proj_out(x4, normalize)
         return [x0_out, x1_out, x2_out, x3_out, x4_out]
+
+
+# import cv2
+# import matplotlib.pyplot as plt
+#
+# im =cv2.imread('T0001_0.jpg')
+# im = cv2.resize(im,(512,512))
+# im=torch.from_numpy(im)
+# im = torch.permute(im,(-1,0,1))
+# x = SwinUNETR(im.shape,in_channels=3,out_channels=1)
