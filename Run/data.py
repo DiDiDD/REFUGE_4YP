@@ -15,15 +15,19 @@ class DriveDataset(Dataset):
     def __getitem__(self, index):
         """ Reading image """
         image = cv2.imread(self.images_path[index], cv2.IMREAD_COLOR)
-        image = image/255.0 ## (512, 512, 3)
-        image = np.transpose(image, (2, 0, 1))  ## (3, 512, 512)
+        '''Normalise tensity in range [-1,-1]'''
+        image = (image-127.5)/255.0
+        image = np.transpose(image, (2, 0, 1))
         image = image.astype(np.float32)
         image = torch.from_numpy(image)
 
         """ Reading mask """
         mask = cv2.imread(self.masks_path[index], cv2.IMREAD_GRAYSCALE)
-        mask = mask/255.0   ## (512, 512)
-        mask = np.expand_dims(mask, axis=0) ## (1, 512, 512)
+        '''Normalise tensity in range [-1,-1]'''
+        mask = (mask-127.5)/127.5
+        '''change 0 => 1, 1 =>0'''
+        np.where((mask == 0) | (mask == 1), mask ^ 1, mask)
+        mask = np.expand_dims(mask, axis=0)
         mask = mask.astype(np.float32)
         mask = torch.from_numpy(mask)
 

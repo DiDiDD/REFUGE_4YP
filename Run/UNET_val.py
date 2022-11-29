@@ -9,7 +9,7 @@ import imageio
 import torch
 from sklearn.metrics import accuracy_score, f1_score, jaccard_score, precision_score, recall_score
 
-from model import build_unet
+from UNet_model import build_unet
 from utils import create_dir, seeding
 
 def calculate_metrics(y_true, y_pred):
