@@ -5,11 +5,14 @@ from glob import glob
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
+import torchvision
+import matplotlib as plt
+import numpy as np
 import torch.nn as nn
 
 from data import DriveDataset
 from UNet_model import build_unet
-from loss import DiceLoss, DiceBCELoss
+from monai.losses import DiceCELoss
 from utils import seeding, create_dir, epoch_time
 
 def train(model, loader, optimizer, loss_fn, device):
@@ -67,11 +70,11 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (H, W)
-    batch_size = 20
-    epoch = 100
-    iteration = 20
+    epoch = 50
+    iteration = 80
+    batch_size = 5
     lr = 1e-4
-    checkpoint_path = "/home/mans4021/Desktop/Retina-Blood-Vessel-Segmentation-in-PyTorch/checkpoint.pth"
+    checkpoint_path = "/home/mans4021/Desktop/checkpoint.pth"
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)
@@ -97,7 +100,7 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
-    loss_fn = DiceBCELoss()
+    loss_fn = DiceCELoss(sigmoid=True)
 
     """ Training the model """
     best_valid_loss = float("inf")
@@ -112,7 +115,6 @@ if __name__ == "__main__":
             if valid_loss < best_valid_loss:
                 data_str = f"Valid loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint: {checkpoint_path}"
                 print(data_str)
-
                 best_valid_loss = valid_loss
                 torch.save(model.state_dict(), checkpoint_path)
 
@@ -123,3 +125,4 @@ if __name__ == "__main__":
             data_str += f'\tTrain Loss: {train_loss:.3f}\n'
             data_str += f'\t Val. Loss: {valid_loss:.3f}\n'
             print(data_str)
+

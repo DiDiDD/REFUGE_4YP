@@ -26,11 +26,13 @@ class DriveDataset(Dataset):
         '''Normalise tensity in range [-1,-1]'''
         mask = (mask-127.5)/127.5
         '''change 0 => 1, 1 =>0'''
-        mask_cup=np.where(mask > 0, 0, 1, dtype=np.float32)
-        mask_disc=np.where(mask == 1 and mask == 0, 0, 1, dtype=np.float32)
-        mask = np.stack(mask_cup, mask_disc, axis=0)
+        mask_cup=np.where(mask > 0, 0, 1)
+        mask_disc=np.where((mask == 1) | (mask ==0), 0, 1)
+        mask = np.stack((mask_cup, mask_disc), axis=0)
+        mask = mask.astype(np.float32)
         '''convert numpy array into tensor'''
         mask = torch.from_numpy(mask)
+
 
         return image, mask
 
