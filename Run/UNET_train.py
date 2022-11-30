@@ -67,9 +67,10 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (H, W)
-    batch_size = 2
-    num_epochs = 10
-    lr = 1e-3
+    batch_size = 20
+    epoch = 100
+    iteration = 20
+    lr = 1e-4
     checkpoint_path = "/home/mans4021/Desktop/Retina-Blood-Vessel-Segmentation-in-PyTorch/checkpoint.pth"
 
     """ Dataset and loader """
@@ -101,25 +102,24 @@ if __name__ == "__main__":
     """ Training the model """
     best_valid_loss = float("inf")
 
-    for epoch in tqdm(range(num_epochs)):
-        start_time = time.time()
-        print('start')
-        train_loss = train(model, train_loader, optimizer, loss_fn, device)
-        print('running?')
-        valid_loss = evaluate(model, valid_loader, loss_fn, device)
+    for epoch_n in tqdm(range(epoch)):
+        for iteration_n in tqdm(range(iteration)):
+            start_time = time.time()
+            train_loss = train(model, train_loader, optimizer, loss_fn, device)
+            valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
-        """ Saving the model """
-        if valid_loss < best_valid_loss:
-            data_str = f"Valid loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint: {checkpoint_path}"
+            """ Saving the model """
+            if valid_loss < best_valid_loss:
+                data_str = f"Valid loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint: {checkpoint_path}"
+                print(data_str)
+
+                best_valid_loss = valid_loss
+                torch.save(model.state_dict(), checkpoint_path)
+
+            end_time = time.time()
+            epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+
+            data_str = f'Epoch: {epoch+1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s\n'
+            data_str += f'\tTrain Loss: {train_loss:.3f}\n'
+            data_str += f'\t Val. Loss: {valid_loss:.3f}\n'
             print(data_str)
-
-            best_valid_loss = valid_loss
-            torch.save(model.state_dict(), checkpoint_path)
-
-        end_time = time.time()
-        epoch_mins, epoch_secs = epoch_time(start_time, end_time)
-
-        data_str = f'Epoch: {epoch+1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s\n'
-        data_str += f'\tTrain Loss: {train_loss:.3f}\n'
-        data_str += f'\t Val. Loss: {valid_loss:.3f}\n'
-        print(data_str)

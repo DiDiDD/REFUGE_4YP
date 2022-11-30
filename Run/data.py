@@ -16,7 +16,7 @@ class DriveDataset(Dataset):
         """ Reading image """
         image = cv2.imread(self.images_path[index], cv2.IMREAD_COLOR)
         '''Normalise tensity in range [-1,-1]'''
-        image = (image-127.5)/255.0
+        image = (image-127.5)/127.5
         image = np.transpose(image, (2, 0, 1))
         image = image.astype(np.float32)
         image = torch.from_numpy(image)
@@ -26,9 +26,10 @@ class DriveDataset(Dataset):
         '''Normalise tensity in range [-1,-1]'''
         mask = (mask-127.5)/127.5
         '''change 0 => 1, 1 =>0'''
-        np.where((mask == 0) | (mask == 1), mask ^ 1, mask)
-        mask = np.expand_dims(mask, axis=0)
-        mask = mask.astype(np.float32)
+        mask_cup=np.where(mask > 0, 0, 1, dtype=np.float32)
+        mask_disc=np.where(mask == 1 and mask == 0, 0, 1, dtype=np.float32)
+        mask = np.stack(mask_cup, mask_disc, axis=0)
+        '''convert numpy array into tensor'''
         mask = torch.from_numpy(mask)
 
         return image, mask
