@@ -88,7 +88,7 @@ class SwinUNETR(nn.Module):
         super().__init__()
 
         img_size = ensure_tuple_rep(img_size, spatial_dims)  # check if dimensions match
-        patch_size = ensure_tuple_rep([1,2,2],spatial_dims)
+        patch_size = ensure_tuple_rep([2,2],spatial_dims)
         window_size = ensure_tuple_rep(7, spatial_dims)
 
         if not (spatial_dims == 2 or spatial_dims == 3):
@@ -285,7 +285,6 @@ class SwinUNETR(nn.Module):
 
     def forward(self, x_in):
         hidden_states_out = self.swinViT(x_in, self.normalize)
-        print('finish hidden_states')
         enc0 = self.encoder1(x_in)
         enc1 = self.encoder2(hidden_states_out[0])
         enc2 = self.encoder3(hidden_states_out[1])
