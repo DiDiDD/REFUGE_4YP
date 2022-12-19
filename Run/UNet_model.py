@@ -70,7 +70,7 @@ class build_unet(nn.Module):
         self.d4 = decoder_block(128, 64)
 
         """ Classifier """
-        self.outputs = nn.Conv2d(64, 2, kernel_size=1, padding=0)
+        self.outputs = nn.Conv2d(64, 3, kernel_size=1, padding=0)
 
     def forward(self, inputs):
         """ Encoder """
@@ -91,10 +91,9 @@ class build_unet(nn.Module):
         outputs = self.outputs(d4)
 
         return outputs
-'''
+
 if __name__ == "__main__":
     x = torch.randn((20, 3, 512, 512))
     f = build_unet()
     y = f(x)
     print(y.shape)
-'''

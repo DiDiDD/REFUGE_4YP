@@ -70,11 +70,11 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (H, W)
-    epoch = 50
+    epoch = 5
     iteration = 80
     batch_size = 5
-    lr = 1e-4
-    checkpoint_path = "/home/mans4021/Desktop/checkpoint.pth"
+    lr = 1e-4 # 0.0001
+    checkpoint_path = "/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth"
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)
@@ -84,14 +84,14 @@ if __name__ == "__main__":
         dataset=train_dataset,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=2
+        num_workers=8
     )
 
     valid_loader = DataLoader(
         dataset=valid_dataset,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=2
+        num_workers=4
     )
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
-    loss_fn = DiceCELoss(sigmoid=True)
+    loss_fn = DiceCELoss(softmax=True)
 
     """ Training the model """
     best_valid_loss = float("inf")

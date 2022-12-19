@@ -15,13 +15,13 @@ from utils import create_dir, seeding
 def calculate_metrics(y_true, y_pred):
     """ Ground truth """
     y_true = y_true.cpu().numpy()
-    y_true = y_true > 0.5
+    ## y_true = y_true > 0.5
     y_true = y_true.astype(np.uint8)
     y_true = y_true.reshape(-1)
 
     """ Prediction """
     y_pred = y_pred.cpu().numpy()
-    y_pred = y_pred > 0.5
+    ##  y_pred = y_pred > 0.5
     y_pred = y_pred.astype(np.uint8)
     y_pred = y_pred.reshape(-1)
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (W, H)
-    checkpoint_path = "/home/mans4021/Desktop/Retina-Blood-Vessel-Segmentation-in-PyTorch/checkpoint.pth"
+    checkpoint_path = "/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth"
 
     """ Load the checkpoint """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -73,8 +73,8 @@ if __name__ == "__main__":
         """ Reading image """
         image = cv2.imread(x, cv2.IMREAD_COLOR) ## (512, 512, 3)
         ## image = cv2.resize(image, size)
+        ## image = (image - 127.5) / 127.5
         x = np.transpose(image, (2, 0, 1))      ## (3, 512, 512)
-        x = x/255.0
         x = np.expand_dims(x, axis=0)           ## (1, 3, 512, 512)
         x = x.astype(np.float32)
         x = torch.from_numpy(x)
@@ -84,7 +84,6 @@ if __name__ == "__main__":
         mask = cv2.imread(y, cv2.IMREAD_GRAYSCALE)  ## (512, 512)
         ## mask = cv2.resize(mask, size)
         y = np.expand_dims(mask, axis=0)            ## (1, 512, 512)
-        y = y/255.0
         y = np.expand_dims(y, axis=0)               ## (1, 1, 512, 512)
         y = y.astype(np.float32)
         y = torch.from_numpy(y)
@@ -94,20 +93,24 @@ if __name__ == "__main__":
             """ Prediction and Calculating FPS """
             start_time = time.time()
             pred_y = model(x)
-            pred_y = torch.sigmoid(pred_y)
+            pred_y = torch.softmax(pred_y,dim=1)
             total_time = time.time() - start_time
             time_taken.append(total_time)
 
 
             score = calculate_metrics(y, pred_y)
             metrics_score = list(map(add, metrics_score, score))
-            pred_y = pred_y[0].cpu().numpy()        ## (1, 512, 512)
-            pred_y = np.squeeze(pred_y, axis=0)     ## (512, 512)
-            pred_y = pred_y > 0.5
-            pred_y = np.array(pred_y, dtype=np.uint8)
+            pred_y = pred_y[0].cpu().numpy()        ## (3, 512, 512)
+            mask_pred = np.zeros([512,512])
+            # change probability into mask
+
+
+            mask_pred = np.argmax(pred_y,axis=0)
+
+            mask_pred = np.array(pred_y, dtype=np.uint8)
 
         """ Saving masks """
-        ori_mask = mask_parse(mask)
+        ori_mask = mask_parse(mask_pred)
         pred_y = mask_parse(pred_y)
         line = np.ones((size[1], 10, 3)) * 128
 
@@ -125,3 +128,6 @@ if __name__ == "__main__":
 
     fps = 1/np.mean(time_taken)
     print("FPS: ", fps)
+
+
+loss = (ground_truth, softmax or classes)
