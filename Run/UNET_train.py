@@ -1,68 +1,62 @@
-
-import os
 import time
 from glob import glob
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
-import torchvision
-import matplotlib as plt
-import numpy as np
-import torch.nn as nn
-
 from data import DriveDataset
 from UNet_model import build_unet
 from monai.losses import DiceCELoss
-from utils import seeding, create_dir, epoch_time
+from utils import seeding, create_dir, train_time
+import torch
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter('/home/mans4021/Desktop/REFUGE_4YP/Board/')
 
 def train(model, loader, optimizer, loss_fn, device):
-    epoch_loss = 0.0
-
+    iteration_loss = 0.0
     model.train()
     for x, y in loader:
+        y = torch.nn.functional.one_hot(y, 3).squeeze()
+        y = y.permute(0,3,1,2)
         x = x.to(device, dtype=torch.float32)
         y = y.to(device, dtype=torch.float32)
-
         optimizer.zero_grad()
         y_pred = model(x)
         loss = loss_fn(y_pred, y)
         loss.backward()
         optimizer.step()
-        epoch_loss += loss.item()
+        iteration_loss += loss.item()
 
-    epoch_loss = epoch_loss/len(loader)
-    return epoch_loss
+    iteration_loss = iteration_loss/len(loader)
+    return iteration_loss
 
 def evaluate(model, loader, loss_fn, device):
-    epoch_loss = 0.0
+    val_loss = 0.0
 
     model.eval()
     with torch.no_grad():
         for x, y in loader:
+            y = torch.nn.functional.one_hot(y, 3).squeeze()
+            y = y.permute(0, 3, 1, 2)
             x = x.to(device, dtype=torch.float32)
-            y = y.to(device, dtype=torch.float32)
-
+            y = y.to(device)
             y_pred = model(x)
             loss = loss_fn(y_pred, y)
-            epoch_loss += loss.item()
+            val_loss += loss.item()
 
-        epoch_loss = epoch_loss/len(loader)
-    return epoch_loss
+        val_loss = val_loss/len(loader)
+    return val_loss
 
 if __name__ == "__main__":
     """ Seeding """
     seeding(42)
-
     """ Directories """
     create_dir("files")
-
     """ Load dataset """
-    train_x = sorted(glob("../new_data/train/image/*"))
-    train_y = sorted(glob("../new_data/train/mask/*"))
-
-    valid_x = sorted(glob("../new_data/test/image/*"))
-    valid_y = sorted(glob("../new_data/test/mask/*"))
-
+    train_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/train/image/*"))
+    train_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/train/mask/*"))
+    valid_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image/*"))
+    valid_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/*"))
+    '''check size of datasets'''
     data_str = f"Dataset Size:\nTrain: {len(train_x)} - Valid: {len(valid_x)}\n"
     print(data_str)
 
@@ -84,7 +78,7 @@ if __name__ == "__main__":
         dataset=train_dataset,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=8
+        num_workers=4
     )
 
     valid_loader = DataLoader(
@@ -111,6 +105,9 @@ if __name__ == "__main__":
             train_loss = train(model, train_loader, optimizer, loss_fn, device)
             valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
+            writer.add_scalar('Training Loss', train_loss, iteration + 1 + 80*epoch_n)
+            writer.add_scalar('Validation Loss', valid_loss, iteration + 1 + 80 * epoch_n)
+
             """ Saving the model """
             if valid_loss < best_valid_loss:
                 data_str = f"Valid loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint: {checkpoint_path}"
@@ -119,10 +116,9 @@ if __name__ == "__main__":
                 torch.save(model.state_dict(), checkpoint_path)
 
             end_time = time.time()
-            epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+            iteration_mins, iteration_secs = train_time(start_time, end_time)
 
-            data_str = f'Epoch: {epoch+1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s\n'
+            data_str = f'Epoch: {epoch_n+1:02} | Iteration Time: {iteration_mins}m {iteration_secs}s\n'
             data_str += f'\tTrain Loss: {train_loss:.3f}\n'
             data_str += f'\t Val. Loss: {valid_loss:.3f}\n'
             print(data_str)
-

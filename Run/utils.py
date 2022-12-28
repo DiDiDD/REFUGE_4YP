@@ -1,9 +1,6 @@
-
 import os
-import time
 import random
 import numpy as np
-import cv2
 import torch
 
 """ Seeding the randomness. """
@@ -21,7 +18,7 @@ def create_dir(path):
         os.makedirs(path)
 
 """ Calculate the time taken """
-def epoch_time(start_time, end_time):
+def train_time(start_time, end_time):
     elapsed_time = end_time - start_time
     elapsed_mins = int(elapsed_time / 60)
     elapsed_secs = int(elapsed_time - (elapsed_mins * 60))

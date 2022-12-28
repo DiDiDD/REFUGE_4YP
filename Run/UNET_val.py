@@ -1,35 +1,24 @@
-
 import os, time
 from operator import add
+from data import DriveDataset
+from torch.utils.data import DataLoader
 import numpy as np
 from glob import glob
 import cv2
 from tqdm import tqdm
-import imageio
 import torch
-from sklearn.metrics import accuracy_score, f1_score, jaccard_score, precision_score, recall_score
-
+from torchmetrics.classification import MulticlassJaccardIndex, MulticlassF1Score, MulticlassPrecision, MulticlassRecall, MulticlassAccuracy
 from UNet_model import build_unet
 from utils import create_dir, seeding
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter('/home/mans4021/Desktop/REFUGE_4YP/Board_val/')
 
 def calculate_metrics(y_true, y_pred):
-    """ Ground truth """
-    y_true = y_true.cpu().numpy()
-    ## y_true = y_true > 0.5
-    y_true = y_true.astype(np.uint8)
-    y_true = y_true.reshape(-1)
-
-    """ Prediction """
-    y_pred = y_pred.cpu().numpy()
-    ##  y_pred = y_pred > 0.5
-    y_pred = y_pred.astype(np.uint8)
-    y_pred = y_pred.reshape(-1)
-
-    score_jaccard = jaccard_score(y_true, y_pred)
-    score_f1 = f1_score(y_true, y_pred)
-    score_recall = recall_score(y_true, y_pred)
-    score_precision = precision_score(y_true, y_pred)
-    score_acc = accuracy_score(y_true, y_pred)
+    score_jaccard = MulticlassJaccardIndex(y_pred, y_true, num_classes=3)
+    score_f1 = MulticlassF1Score(y_pred, y_true, num_classes=3)
+    score_precision = MulticlassPrecision(y_pred, y_true, num_classes=3)
+    score_recall = MulticlassRecall(y_pred, y_true, num_classes=3)
+    score_acc = MulticlassAccuracy(y_pred, y_true, nuim_classes=3)
 
     return [score_jaccard, score_f1, score_recall, score_precision, score_acc]
 
@@ -43,13 +32,15 @@ if __name__ == "__main__":
     seeding(42)
 
     """ Folders """
-    create_dir("results")
+    create_dir("/home/mans4021/Desktop/new_data/REFUGE2/test/results/")
 
     """ Load dataset """
-    test_x = sorted(glob("../new_data/test/image/*"))
-    test_y = sorted(glob("../new_data/test/mask/*"))
+    test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image/*"))
+    test_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/*"))
+    test_dataset = DriveDataset(test_x, test_y)
 
     """ Hyperparameters """
+    dataset_size = len(test_x)
     H = 512
     W = 512
     size = (W, H)
@@ -64,70 +55,39 @@ if __name__ == "__main__":
     model.eval()
 
     metrics_score = [0.0, 0.0, 0.0, 0.0, 0.0]
-    time_taken = []
 
-    for i, (x, y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
-        """ Extract the name """
-        name = x.split("/")[-1].split(".")[0]
-
-        """ Reading image """
-        image = cv2.imread(x, cv2.IMREAD_COLOR) ## (512, 512, 3)
-        ## image = cv2.resize(image, size)
-        ## image = (image - 127.5) / 127.5
-        x = np.transpose(image, (2, 0, 1))      ## (3, 512, 512)
-        x = np.expand_dims(x, axis=0)           ## (1, 3, 512, 512)
-        x = x.astype(np.float32)
-        x = torch.from_numpy(x)
-        x = x.to(device)
-
-        """ Reading mask """
-        mask = cv2.imread(y, cv2.IMREAD_GRAYSCALE)  ## (512, 512)
-        ## mask = cv2.resize(mask, size)
-        y = np.expand_dims(mask, axis=0)            ## (1, 512, 512)
-        y = np.expand_dims(y, axis=0)               ## (1, 1, 512, 512)
-        y = y.astype(np.float32)
-        y = torch.from_numpy(y)
-        y = y.to(device)
-
+    for i in tqdm(range(dataset_size)):
         with torch.no_grad():
-            """ Prediction and Calculating FPS """
-            start_time = time.time()
-            pred_y = model(x)
-            pred_y = torch.softmax(pred_y,dim=1)
-            total_time = time.time() - start_time
-            time_taken.append(total_time)
+            '''Prediction'''
+            image = test_dataset[i][0].unsqueeze(0)                       # (1,3,512,512)
+            ori_mask = test_dataset[i][1].squeeze(0)                        # (512,512)
+            pred_y = model(image.cuda()).squeeze(0)                       # (3,512,512)
+            pred_y = torch.softmax(pred_y, dim=0)                         # (3,512,512)
+            pred_mask = torch.argmax(pred_y, dim=0)                        # (512, 512)
+            #score = calculate_metrics(pred_mask, ori_mask)
+            #metrics_score = list(map(add, metrics_score, score))
+            pred_mask = pred_mask.cpu().numpy()        ## (512, 512)
+            pred_mask = np.where(pred_mask==2, 255, pred_mask)
+            pred_mask = np.where(pred_mask==1, 128, pred_mask)
+            ori_mask = np.where(ori_mask==2, 255, ori_mask)
+            ori_mask = np.where(ori_mask==1, 128, ori_mask)
+            image= image*127.5 + 127.5
 
+            """ Saving masks """
+            ori_mask = mask_parse(ori_mask)
+            pred_mask = mask_parse(pred_mask)
+            line = np.ones((512,20,3)) * 255
 
-            score = calculate_metrics(y, pred_y)
-            metrics_score = list(map(add, metrics_score, score))
-            pred_y = pred_y[0].cpu().numpy()        ## (3, 512, 512)
-            mask_pred = np.zeros([512,512])
-            # change probability into mask
+            cat_images = np.concatenate(
+                [image.squeeze().permute(1,2,0), line, ori_mask, line, pred_mask], axis=1
+            )
+            cv2.imwrite(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/{i}.png", cat_images)
 
-
-            mask_pred = np.argmax(pred_y,axis=0)
-
-            mask_pred = np.array(pred_y, dtype=np.uint8)
-
-        """ Saving masks """
-        ori_mask = mask_parse(mask_pred)
-        pred_y = mask_parse(pred_y)
-        line = np.ones((size[1], 10, 3)) * 128
-
-        cat_images = np.concatenate(
-            [image, line, ori_mask, line, pred_y * 255], axis=1
-        )
-        cv2.imwrite(f"results/{name}.png", cat_images)
-
+    '''
     jaccard = metrics_score[0]/len(test_x)
     f1 = metrics_score[1]/len(test_x)
     recall = metrics_score[2]/len(test_x)
     precision = metrics_score[3]/len(test_x)
     acc = metrics_score[4]/len(test_x)
     print(f"Jaccard: {jaccard:1.4f} - F1: {f1:1.4f} - Recall: {recall:1.4f} - Precision: {precision:1.4f} - Acc: {acc:1.4f}")
-
-    fps = 1/np.mean(time_taken)
-    print("FPS: ", fps)
-
-
-loss = (ground_truth, softmax or classes)
+'''

@@ -83,11 +83,11 @@ if __name__ == "__main__":
     print(f"Test: {len(test_x)} - {len(test_y)}")
 
     """ Create directories to save the augmented data """
-    create_dir("new_data/train/image/")
-    create_dir("new_data/train/mask/")
-    create_dir("new_data/test/image/")
-    create_dir("new_data/test/mask/")
+    create_dir("/home/mans4021/Desktop/new_data/REFUGE2/train/image/")
+    create_dir("/home/mans4021/Desktop/new_data/REFUGE2/train/mask/")
+    create_dir("/home/mans4021/Desktop/new_data/REFUGE2/test/image/")
+    create_dir("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/")
 
     """ Data augmentation """
-    augment_data(train_x, train_y, "new_data/train/", augment=False)
-    augment_data(test_x, test_y, "new_data/test/", augment=False)
+    augment_data(train_x, train_y, "/home/mans4021/Desktop/new_data/REFUGE2/train/", augment=False)
+    augment_data(test_x, test_y, "/home/mans4021/Desktop/new_data/REFUGE2/test/", augment=False)

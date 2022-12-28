@@ -1,15 +1,20 @@
-import cv2
+import time
+from glob import glob
+from tqdm import tqdm
+import torch
+from torch.utils.data import DataLoader
+import torchvision
 import matplotlib.pyplot as plt
 import numpy as np
+import torch.nn as nn
+from data import DriveDataset
+from UNet_model import build_unet
+from monai.losses import DiceCELoss
+from utils import seeding, create_dir, train_time
 
-mask = cv2.imread('g0001.bmp',cv2.IMREAD_GRAYSCALE)
-mask = np.where(mask == 0, 2, mask)
-mask = np.where(mask == 128, 1, mask)
-mask = np.where(mask == 255, 0, mask)
-mask = np.expand_dims(mask, axis=0)
-print(mask.shape)
-image1 = mask
-# print((image[:,:,0] == image[:,:,1]).all())
-print(image1.shape)
-# im = plt.imshow(image1)
-# plt.show()
+test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image/*"))
+test_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/*"))
+test_dataset = DriveDataset(test_x, test_y)
+#test_dataset = torch.argmax(test_dataset[0][1], dim=0)
+test_dataset = test_dataset[0][1]
+print(test_dataset.size())

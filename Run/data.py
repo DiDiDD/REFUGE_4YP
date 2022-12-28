@@ -1,5 +1,3 @@
-
-import os
 import numpy as np
 import cv2
 import torch
@@ -23,10 +21,10 @@ class DriveDataset(Dataset):
 
         """ Reading mask """
         mask = cv2.imread(self.masks_path[index], cv2.IMREAD_GRAYSCALE)
-        mask = np.where(mask == 0, 2, mask)
+        mask = np.where(mask<128, 2, mask)
         mask = np.where(mask == 128, 1, mask)
-        mask = np.where(mask == 255, 0, mask)
-        mask = mask.astype(np.float32)
+        mask = np.where(mask>128, 0, mask)
+        mask = mask.astype(np.int64)
         '''convert numpy array into tensor'''
         mask = np.expand_dims(mask, axis=0)
         mask = torch.from_numpy(mask)
