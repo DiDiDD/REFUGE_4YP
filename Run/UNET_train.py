@@ -1,7 +1,6 @@
 import time
 from glob import glob
 from tqdm import tqdm
-import torch
 from torch.utils.data import DataLoader
 from data import DriveDataset
 from UNet_model import build_unet
@@ -9,7 +8,14 @@ from monai.losses import DiceCELoss
 from utils import seeding, create_dir, train_time
 import torch
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter('/home/mans4021/Desktop/REFUGE_4YP/Board/')
+import argparse
+parser = argparse.ArgumentParser(description='Specify Parameters')
+parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
+parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
+args = parser.parse_args()
+lr = args.lr
+batch_size = args.b_s
+writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/loss_record', comment= f'lr_{lr}_bs_{batch_size}')
 
 def train(model, loader, optimizer, loss_fn, device):
     iteration_loss = 0.0
@@ -49,13 +55,11 @@ def evaluate(model, loader, loss_fn, device):
 if __name__ == "__main__":
     """ Seeding """
     seeding(42)
-    """ Directories """
-    create_dir("files")
     """ Load dataset """
     train_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/train/image/*"))
     train_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/train/mask/*"))
-    valid_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image/*"))
-    valid_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/*"))
+    valid_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/image/*"))
+    valid_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/mask/*"))
     '''check size of datasets'''
     data_str = f"Dataset Size:\nTrain: {len(train_x)} - Valid: {len(valid_x)}\n"
     print(data_str)
@@ -64,11 +68,10 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (H, W)
-    epoch = 5
-    iteration = 80
-    batch_size = 5
-    lr = 1e-4 # 0.0001
-    checkpoint_path = "/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth"
+    iteration = 1000 #change
+    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth', 'x')
+    f.close()
+    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth'
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)
@@ -93,32 +96,32 @@ if __name__ == "__main__":
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
     loss_fn = DiceCELoss(softmax=True)
 
     """ Training the model """
     best_valid_loss = float("inf")
 
-    for epoch_n in tqdm(range(epoch)):
-        for iteration_n in tqdm(range(iteration)):
-            start_time = time.time()
-            train_loss = train(model, train_loader, optimizer, loss_fn, device)
-            valid_loss = evaluate(model, valid_loader, loss_fn, device)
+    for iteration_n in tqdm(range(iteration)):
+        start_time = time.time()
+        train_loss = train(model, train_loader, optimizer, loss_fn, device)
+        valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
-            writer.add_scalar('Training Loss', train_loss, iteration + 1 + 80*epoch_n)
-            writer.add_scalar('Validation Loss', valid_loss, iteration + 1 + 80 * epoch_n)
+        writer.add_scalar('Training Loss', train_loss, iteration)
+        writer.add_scalar('Validation Loss', valid_loss, iteration)
 
-            """ Saving the model """
-            if valid_loss < best_valid_loss:
-                data_str = f"Valid loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint: {checkpoint_path}"
-                print(data_str)
-                best_valid_loss = valid_loss
-                torch.save(model.state_dict(), checkpoint_path)
-
-            end_time = time.time()
-            iteration_mins, iteration_secs = train_time(start_time, end_time)
-
-            data_str = f'Epoch: {epoch_n+1:02} | Iteration Time: {iteration_mins}m {iteration_secs}s\n'
-            data_str += f'\tTrain Loss: {train_loss:.3f}\n'
-            data_str += f'\t Val. Loss: {valid_loss:.3f}\n'
+        """ Saving the model """
+        if valid_loss < best_valid_loss:
+            data_str = f"Valid loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint: {checkpoint_path}"
             print(data_str)
+            best_valid_loss = valid_loss
+            torch.save(model.state_dict(), checkpoint_path)
+
+        end_time = time.time()
+        iteration_mins, iteration_secs = train_time(start_time, end_time)
+
+        data_str = f'Iteration: {iteration_n+1:02} | Iteration Time: {iteration_mins}m {iteration_secs}s\n'
+        data_str += f'\tTrain Loss: {train_loss:.3f}\n'
+        data_str += f'\t Val. Loss: {valid_loss:.3f}\n'
+        print(data_str)
+writer.flush()

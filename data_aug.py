@@ -10,13 +10,15 @@ def create_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def load_data(path_train_x,path_train_y, path_test_x, path_test_y):
+def load_data(path_train_x, path_train_y, path_val_x, path_val_y, path_test_x, path_test_y):
     train_x = sorted(glob(os.path.join(path_train_x, '*.jpg')))
     train_y = sorted(glob(os.path.join(path_train_y, '*.bmp')))
+    val_x = sorted(glob(os.path.join(path_val_x, '*.jpg')))
+    val_y = sorted(glob(os.path.join(path_val_y, '*.bmp')))
     test_x = sorted(glob(os.path.join(path_test_x, '*.jpg')))
     test_y = sorted(glob(os.path.join(path_test_y, '*.bmp')))
 
-    return (train_x, train_y), (test_x, test_y)
+    return (train_x, train_y), (val_x, val_y), (test_x, test_y)
 
 def augment_data(images, masks, save_path, augment=True):
     size = (512, 512)
@@ -74,20 +76,28 @@ if __name__ == "__main__":
 
     """ Load the data """
     data_path_train_x = "/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Train-400/Images_comb"
-    data_path_test_x = "/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Train-400/G+N"
-    data_path_train_y = "/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Val-400/REFUGE-Validation400"
-    data_path_test_y = "/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Val-400/REFUGE-Validation400-GT/Disc_Cup_Masks"
-    (train_x, train_y), (test_x, test_y) = load_data(data_path_train_x, data_path_test_x, data_path_train_y, data_path_test_y)
+    data_path_train_y  = "/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Train-400/G+N"
+    data_path_val_x = "/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Val-400/REFUGE-Validation400"
+    data_path_val_y  = "/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Val-400/REFUGE-Validation400-GT/Disc_Cup_Masks"
+    data_path_test_x = '/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Test-400/Images'
+    data_path_test_y  = '/home/mans4021/Desktop/refuge-challenge/REFUGE2-Training/REFUGE2-Training/REFUGE1-Test-400/G+N'
+    (train_x, train_y), (val_x, val_y), (test_x, test_y) = load_data(data_path_train_x, data_path_train_y,
+                                                                      data_path_val_x, data_path_val_y,
+                                                                      data_path_test_x, data_path_test_y)
 
     print(f"Train: {len(train_x)} - {len(train_y)}")
-    print(f"Test: {len(test_x)} - {len(test_y)}")
+    print(f"Val: {len(val_x)} - {len(val_y)}")
+    print(f"Train: {len(test_x)} - {len(test_y)}")
 
     """ Create directories to save the augmented data """
     create_dir("/home/mans4021/Desktop/new_data/REFUGE2/train/image/")
     create_dir("/home/mans4021/Desktop/new_data/REFUGE2/train/mask/")
+    create_dir("/home/mans4021/Desktop/new_data/REFUGE2/val/image/")
+    create_dir("/home/mans4021/Desktop/new_data/REFUGE2/val/mask/")
     create_dir("/home/mans4021/Desktop/new_data/REFUGE2/test/image/")
     create_dir("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/")
 
     """ Data augmentation """
     augment_data(train_x, train_y, "/home/mans4021/Desktop/new_data/REFUGE2/train/", augment=False)
+    augment_data(val_x, val_y, "/home/mans4021/Desktop/new_data/REFUGE2/val/", augment=False)
     augment_data(test_x, test_y, "/home/mans4021/Desktop/new_data/REFUGE2/test/", augment=False)

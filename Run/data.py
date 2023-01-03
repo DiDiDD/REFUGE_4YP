@@ -21,9 +21,9 @@ class DriveDataset(Dataset):
 
         """ Reading mask """
         mask = cv2.imread(self.masks_path[index], cv2.IMREAD_GRAYSCALE)
-        mask = np.where(mask<128, 2, mask)
-        mask = np.where(mask == 128, 1, mask)
-        mask = np.where(mask>128, 0, mask)
+        mask = np.where(mask<128, 2, mask)     #cup
+        mask = np.where(mask == 128, 1, mask)  #disc
+        mask = np.where(mask>128, 0, mask)     #backgroud
         mask = mask.astype(np.int64)
         '''convert numpy array into tensor'''
         mask = np.expand_dims(mask, axis=0)

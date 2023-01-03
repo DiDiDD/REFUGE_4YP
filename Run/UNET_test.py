@@ -1,0 +1,106 @@
+import os, time
+from operator import add
+from data import DriveDataset
+from torch.utils.data import DataLoader
+import numpy as np
+from glob import glob
+import cv2
+from tqdm import tqdm
+import torch
+from torchmetrics.functional.classification import multiclass_jaccard_index, multiclass_f1_score, multiclass_precision, multiclass_recall, multiclass_accuracy
+from UNet_model import build_unet
+from utils import create_dir, seeding
+import argparse
+parser = argparse.ArgumentParser(description='Specify Parameters')
+parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
+parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
+args = parser.parse_args()
+lr = args.lr
+batch_size = args.b_s
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/', comment= f'lr_{lr}_bs_{batch_size}')
+
+def calculate_metrics(y_pred, y_true):
+    score_jaccard = multiclass_jaccard_index(y_pred, y_true, num_classes=3, average=None)
+    score_f1 = multiclass_f1_score(y_pred, y_true, num_classes=3, average=None)
+    score_precision = multiclass_precision(y_pred, y_true, num_classes=3, average=None)
+    score_recall = multiclass_recall(y_pred, y_true, num_classes=3, average=None)
+    score_acc = multiclass_accuracy(y_pred, y_true, num_classes=3, average=None)
+
+    return [score_jaccard, score_f1, score_recall, score_precision, score_acc]
+
+def mask_parse(mask):
+    mask = np.expand_dims(mask, axis=-1)    ## (512, 512, 1)
+    mask = np.concatenate([mask, mask, mask], axis=-1)  ## (512, 512, 3)
+    return mask
+
+if __name__ == "__main__":
+    """ Seeding """
+    seeding(42)
+
+    """ Folders """
+    create_dir(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/lr_{lr}_bs_{batch_size}")
+
+    """ Load dataset """
+    test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/image/*"))
+    test_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/mask/*"))
+    test_dataset = DriveDataset(test_x, test_y)
+
+    """ Hyperparameters """
+    dataset_size = len(test_x)
+    H = 512
+    W = 512
+    size = (W, H)
+    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}'
+
+    """ Load the checkpoint """
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    model = build_unet()
+    model = model.to(device)
+    model.load_state_dict(torch.load(checkpoint_path, map_location=device))
+    model.eval()
+
+    metrics_score = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+    for i in tqdm(range(dataset_size)):
+        with torch.no_grad():
+            '''Prediction'''
+            image = test_dataset[i][0].unsqueeze(0)                       # (1,3,512,512)
+            ori_mask = test_dataset[i][1].squeeze(0).cuda()               # (512,512)
+            pred_y = model(image.cuda()).squeeze(0)                       # (3,512,512)
+            pred_y = torch.softmax(pred_y, dim=0)                         # (3,512,512)
+            pred_mask = torch.argmax(pred_y, dim=0).type(torch.int64)     # (512, 512)
+            score = calculate_metrics(pred_mask, ori_mask)
+            metrics_score = list(map(add, metrics_score, score))
+            pred_mask = pred_mask.cpu().numpy()        ## (512, 512)
+            ori_mask = ori_mask.cpu().numpy()
+            '''Scale value back to image'''
+            pred_mask = np.where(pred_mask==2, 255, pred_mask)
+            pred_mask = np.where(pred_mask==1, 128, pred_mask)
+            ori_mask = np.where(ori_mask==2, 255, ori_mask)
+            ori_mask = np.where(ori_mask==1, 128, ori_mask)
+            image= image*127.5 + 127.5
+            """ Saving masks """
+            ori_mask = mask_parse(ori_mask)
+            pred_mask = mask_parse(pred_mask)
+            line = np.ones((512,20,3)) * 255
+
+            cat_images = np.concatenate(
+                [image.squeeze().permute(1,2,0), line, ori_mask, line, pred_mask], axis=1
+            )
+            cv2.imwrite(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/lr_{lr}_bs_{batch_size}/{i}.png", cat_images)
+
+
+    jaccard = metrics_score[0,:]/len(test_x)
+    f1 = metrics_score[1,:]/len(test_x)
+    recall = metrics_score[2,:]/len(test_x)
+    precision = metrics_score[3,:]/len(test_x)
+    acc = metrics_score[4,:]/len(test_x)
+    # print(f"Jaccard: {jaccard:1.4f} - F1: {f1:1.4f} - Recall: {recall:1.4f} - Precision: {precision:1.4f} - Acc: {acc:1.4f}")
+    for x in range(len(jaccard)):
+        writer.add_scalar('Jaccard Score', jaccard[x],i)
+        writer.add_scalar('F1 Score', f1[x], i)
+        writer.add_scalar('Recall Score', recall[x], i)
+        writer.add_scalar('Precision Score', precision[x], i)
+        writer.add_scalar('Accuracy Score', acc[x], i)

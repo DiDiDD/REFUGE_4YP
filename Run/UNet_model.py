@@ -55,22 +55,22 @@ class build_unet(nn.Module):
         super().__init__()
 
         """ Encoder """
-        self.e1 = encoder_block(3, 64)
-        self.e2 = encoder_block(64, 128)
-        self.e3 = encoder_block(128, 256)
-        self.e4 = encoder_block(256, 512)
+        self.e1 = encoder_block(3, 32)
+        self.e2 = encoder_block(32, 64)
+        self.e3 = encoder_block(64, 128)
+        self.e4 = encoder_block(128, 256)
 
         """ Bottleneck """
-        self.b = conv_block(512, 1024)
+        self.b = conv_block(256, 512)
 
         """ Decoder """
-        self.d1 = decoder_block(1024, 512)
-        self.d2 = decoder_block(512, 256)
-        self.d3 = decoder_block(256, 128)
-        self.d4 = decoder_block(128, 64)
+        self.d1 = decoder_block(512, 256)
+        self.d2 = decoder_block(256, 128)
+        self.d3 = decoder_block(128, 64)
+        self.d4 = decoder_block(64, 32)
 
         """ Classifier """
-        self.outputs = nn.Conv2d(64, 3, kernel_size=1, padding=0)
+        self.outputs = nn.Conv2d(32, 3, kernel_size=1, padding=0)
 
     def forward(self, inputs):
         """ Encoder """
