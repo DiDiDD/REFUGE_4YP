@@ -57,7 +57,7 @@ def augment_data(images, masks, save_path, augment=True):
         index = 0
         for i, m in zip(X, Y):
             i = cv2.resize(i, size)
-            m = cv2.resize(m, size)
+            m = cv2.resize(m, size, interpolation= cv2.INTER_NEAREST)
 
             tmp_image_name = f"{name}_{index}.jpg"
             tmp_mask_name = f"{name}_{index}.bmp"

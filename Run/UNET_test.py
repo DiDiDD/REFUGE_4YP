@@ -14,11 +14,13 @@ import argparse
 parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
+parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
 args = parser.parse_args()
 lr = args.lr
 batch_size = args.b_s
+gpu_index = args.gpu_index
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/', comment= f'lr_{lr}_bs_{batch_size}')
+writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/test_score/', comment= f'lr_{lr}_bs_{batch_size}')
 
 def calculate_metrics(y_pred, y_true):
     score_jaccard = multiclass_jaccard_index(y_pred, y_true, num_classes=3, average=None)
@@ -42,8 +44,8 @@ if __name__ == "__main__":
     create_dir(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/lr_{lr}_bs_{batch_size}")
 
     """ Load dataset """
-    test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/image/*"))
-    test_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/mask/*"))
+    test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image/*"))
+    test_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/*"))
     test_dataset = DriveDataset(test_x, test_y)
 
     """ Hyperparameters """
@@ -51,10 +53,10 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (W, H)
-    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}'
+    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth'
 
     """ Load the checkpoint """
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 
     model = build_unet()
     model = model.to(device)
@@ -91,16 +93,19 @@ if __name__ == "__main__":
             )
             cv2.imwrite(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/lr_{lr}_bs_{batch_size}/{i}.png", cat_images)
 
-
-    jaccard = metrics_score[0,:]/len(test_x)
-    f1 = metrics_score[1,:]/len(test_x)
-    recall = metrics_score[2,:]/len(test_x)
-    precision = metrics_score[3,:]/len(test_x)
-    acc = metrics_score[4,:]/len(test_x)
-    # print(f"Jaccard: {jaccard:1.4f} - F1: {f1:1.4f} - Recall: {recall:1.4f} - Precision: {precision:1.4f} - Acc: {acc:1.4f}")
+    jaccard = metrics_score[0]/len(test_x)
+    f1 = metrics_score[1]/len(test_x)
+    recall = metrics_score[2]/len(test_x)
+    precision = metrics_score[3]/len(test_x)
+    acc = metrics_score[4]/len(test_x)
     for x in range(len(jaccard)):
-        writer.add_scalar('Jaccard Score', jaccard[x],i)
-        writer.add_scalar('F1 Score', f1[x], i)
-        writer.add_scalar('Recall Score', recall[x], i)
-        writer.add_scalar('Precision Score', precision[x], i)
-        writer.add_scalar('Accuracy Score', acc[x], i)
+        writer.add_scalar('Jaccard Score', jaccard[x],x)
+        writer.add_scalar('F1 Score', f1[x], x)
+        writer.add_scalar('Recall Score', recall[x], x)
+        writer.add_scalar('Precision Score', precision[x], x)
+        writer.add_scalar('Accuracy Score', acc[x], x)
+        print('Jaccard Score', jaccard[x], x)
+        print('F1 Score', f1[x], x)
+        print('Recall Score', recall[x], x)
+        print('Precision Score', precision[x], x)
+        print('Accuracy Score', acc[x], x)

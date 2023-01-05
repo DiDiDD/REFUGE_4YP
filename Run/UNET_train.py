@@ -12,8 +12,10 @@ import argparse
 parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
+parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
 args = parser.parse_args()
 lr = args.lr
+gpu_index = args.gpu_index
 batch_size = args.b_s
 writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/loss_record', comment= f'lr_{lr}_bs_{batch_size}')
 
@@ -91,7 +93,7 @@ if __name__ == "__main__":
         num_workers=4
     )
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
     model = build_unet()
     model = model.to(device)
 
