@@ -13,5 +13,5 @@ from monai.losses import DiceCELoss
 from utils import seeding, create_dir, train_time
 from torchmetrics.functional.classification import multiclass_jaccard_index
 
-f = open('/home/mans4021/Desktop/c1.pth', 'x')
-f.close()
+x = torch.tensor([1])
+x1 = torch.tensor([1])

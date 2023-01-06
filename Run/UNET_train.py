@@ -17,7 +17,7 @@ args = parser.parse_args()
 lr = args.lr
 gpu_index = args.gpu_index
 batch_size = args.b_s
-writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/loss_record', comment= f'lr_{lr}_bs_{batch_size}')
+writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/loss_record', comment= f'UNET_lr_{lr}_bs_{batch_size}', filename_suffix= f'UNET_lr_{lr}_bs_{batch_size}')
 
 def train(model, loader, optimizer, loss_fn, device):
     iteration_loss = 0.0
@@ -126,4 +126,3 @@ if __name__ == "__main__":
         data_str += f'\tTrain Loss: {train_loss:.3f}\n'
         data_str += f'\t Val. Loss: {valid_loss:.3f}\n'
         print(data_str)
-writer.flush()

@@ -20,14 +20,29 @@ lr = args.lr
 batch_size = args.b_s
 gpu_index = args.gpu_index
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/test_score/', comment= f'lr_{lr}_bs_{batch_size}')
+writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/test_score/', comment= f'UNET_lr_{lr}_bs_{batch_size}', filename_suffix= f'UNET_lr_{lr}_bs_{batch_size}')
 
 def calculate_metrics(y_pred, y_true):
-    score_jaccard = multiclass_jaccard_index(y_pred, y_true, num_classes=3, average=None)
-    score_f1 = multiclass_f1_score(y_pred, y_true, num_classes=3, average=None)
-    score_precision = multiclass_precision(y_pred, y_true, num_classes=3, average=None)
-    score_recall = multiclass_recall(y_pred, y_true, num_classes=3, average=None)
-    score_acc = multiclass_accuracy(y_pred, y_true, num_classes=3, average=None)
+    score_jaccard_2 = multiclass_jaccard_index(y_pred, y_true, num_classes=3, average=None)[2]
+    score_f1_2 = multiclass_f1_score(y_pred, y_true, num_classes=3, average=None)[2]
+    score_precision_2 = multiclass_precision(y_pred, y_true, num_classes=3, average=None)[2]
+    score_recall_2 = multiclass_recall(y_pred, y_true, num_classes=3, average=None)[2]
+    score_acc_2 = multiclass_accuracy(y_pred, y_true, num_classes=3, average=None)[2]
+
+    y_pred_trans = torch.where(y_pred==2, 1, y_pred)
+    y_true_trans = torch.where(y_true==2, 1, y_true)
+
+    score_jaccard_0_1 = multiclass_jaccard_index(y_pred_trans, y_true_trans, num_classes=2, average=None)
+    score_f1_0_1 = multiclass_f1_score(y_pred_trans, y_true_trans, num_classes=2, average=None)
+    score_precision_0_1 = multiclass_precision(y_pred_trans, y_true_trans, num_classes=2, average=None)
+    score_recall_0_1 = multiclass_recall(y_pred_trans, y_true_trans, num_classes=2, average=None)
+    score_acc_0_1 = multiclass_accuracy(y_pred_trans, y_true_trans, num_classes=2, average=None)
+
+    score_jaccard = torch.cat((score_jaccard_0_1, score_jaccard_2))
+    score_f1 = torch.cat((score_f1_0_1, score_f1_2))
+    score_recall = torch.cat((score_recall_0_1, score_recall_2))
+    score_precision = torch.cat((score_precision_0_1, score_precision_2))
+    score_acc = torch.cat((score_acc_0_1, score_acc_2))
 
     return [score_jaccard, score_f1, score_recall, score_precision, score_acc]
 
