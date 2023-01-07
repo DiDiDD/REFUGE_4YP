@@ -23,11 +23,11 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/test_score/', comment= f'UNET_lr_{lr}_bs_{batch_size}', filename_suffix= f'UNET_lr_{lr}_bs_{batch_size}')
 
 def calculate_metrics(y_pred, y_true):
-    score_jaccard_2 = multiclass_jaccard_index(y_pred, y_true, num_classes=3, average=None)[2]
-    score_f1_2 = multiclass_f1_score(y_pred, y_true, num_classes=3, average=None)[2]
-    score_precision_2 = multiclass_precision(y_pred, y_true, num_classes=3, average=None)[2]
-    score_recall_2 = multiclass_recall(y_pred, y_true, num_classes=3, average=None)[2]
-    score_acc_2 = multiclass_accuracy(y_pred, y_true, num_classes=3, average=None)[2]
+    score_jaccard_2 = multiclass_jaccard_index(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
+    score_f1_2 = multiclass_f1_score(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
+    score_precision_2 = multiclass_precision(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
+    score_recall_2 = multiclass_recall(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
+    score_acc_2 = multiclass_accuracy(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
 
     y_pred_trans = torch.where(y_pred==2, 1, y_pred)
     y_true_trans = torch.where(y_true==2, 1, y_true)
