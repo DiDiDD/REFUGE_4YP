@@ -109,8 +109,8 @@ if __name__ == "__main__":
         train_loss = train(model, train_loader, optimizer, loss_fn, device)
         valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
-        writer.add_scalar('Training Loss', train_loss, iteration)
-        writer.add_scalar('Validation Loss', valid_loss, iteration)
+        writer.add_scalar('Training Loss', train_loss, iteration_n)
+        writer.add_scalar('Validation Loss', valid_loss, iteration_n)
 
         """ Saving the model """
         if valid_loss < best_valid_loss:
