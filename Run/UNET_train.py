@@ -4,10 +4,11 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 from data import DriveDataset
 from UNet_model import build_unet
+from monai.networks.nets import SwinUNETR
 from monai.losses import DiceCELoss
 from utils import seeding, create_dir, train_time
 import torch
-from torch.utils.tensorboard import SummaryWriter
+
 import argparse
 parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
@@ -17,7 +18,12 @@ args = parser.parse_args()
 lr = args.lr
 gpu_index = args.gpu_index
 batch_size = args.b_s
-writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/loss_record', comment= f'UNET_lr_{lr}_bs_{batch_size}', filename_suffix= f'UNET_lr_{lr}_bs_{batch_size}')
+
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/loss_record/', comment= f'UNET_lr_{lr}_bs_{batch_size}', filename_suffix= f'UNET_lr_{lr}_bs_{batch_size}')
+
+'''Initialisation'''
+device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 
 def train(model, loader, optimizer, loss_fn, device):
     iteration_loss = 0.0
@@ -70,7 +76,7 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (H, W)
-    iteration = 1000 #change
+    iteration = 5000  #change
     f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth', 'x')
     f.close()
     checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth'
@@ -93,9 +99,8 @@ if __name__ == "__main__":
         num_workers=4
     )
 
-    device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
-    model = build_unet()
-    model = model.to(device)
+    model = build_unet().to(device)
+
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
@@ -109,12 +114,12 @@ if __name__ == "__main__":
         train_loss = train(model, train_loader, optimizer, loss_fn, device)
         valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
-        writer.add_scalar('Training Loss', train_loss, iteration)
-        writer.add_scalar('Validation Loss', valid_loss, iteration)
+        writer.add_scalar('Training Loss', train_loss, iteration_n)
+        writer.add_scalar('Validation Loss', valid_loss, iteration_n)
 
         """ Saving the model """
         if valid_loss < best_valid_loss:
-            data_str = f"Valid loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint: {checkpoint_path}"
+            data_str = f"Valid loss improved from {best_valid_loss:2.6f} to {valid_loss:2.6f}. Saving checkpoint: {checkpoint_path}"
             print(data_str)
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), checkpoint_path)
@@ -122,7 +127,7 @@ if __name__ == "__main__":
         end_time = time.time()
         iteration_mins, iteration_secs = train_time(start_time, end_time)
 
-        data_str = f'Iteration: {iteration_n+1:02} | Iteration Time: {iteration_mins}m {iteration_secs}s\n'
-        data_str += f'\tTrain Loss: {train_loss:.3f}\n'
-        data_str += f'\t Val. Loss: {valid_loss:.3f}\n'
+        data_str = f'Iteration: {iteration_n+1:02} | Iteration Time: {iteration_mins}min {iteration_secs}s\n'
+        data_str += f'\tTrain Loss: {train_loss:.6f}\n'
+        data_str += f'\t Val. Loss: {valid_loss:.6f}\n'
         print(data_str)
