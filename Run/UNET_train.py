@@ -5,7 +5,8 @@ from torch.utils.data import DataLoader
 from data import DriveDataset
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
-from monai.losses import DiceCELoss
+from monai.losses import DiceLoss
+from utils import create_dir, seeding, calculate_metrics
 from utils import seeding, create_dir, train_time
 import torch
 
@@ -20,7 +21,7 @@ gpu_index = args.gpu_index
 batch_size = args.b_s
 
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/loss_record/', comment= f'UNET_lr_{lr}_bs_{batch_size}', filename_suffix= f'UNET_lr_{lr}_bs_{batch_size}')
+writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/UNET_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
 
 '''Initialisation'''
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
@@ -45,7 +46,6 @@ def train(model, loader, optimizer, loss_fn, device):
 
 def evaluate(model, loader, loss_fn, device):
     val_loss = 0.0
-
     model.eval()
     with torch.no_grad():
         for x, y in loader:
@@ -73,10 +73,11 @@ if __name__ == "__main__":
     print(data_str)
 
     """ Hyperparameters """
+    lr1 = lr
     H = 512
     W = 512
     size = (H, W)
-    iteration = 5000  #change
+    iteration = 3000  #change
     f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth', 'x')
     f.close()
     checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth'
@@ -101,10 +102,9 @@ if __name__ == "__main__":
 
     model = build_unet().to(device)
 
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
-    loss_fn = DiceCELoss(softmax=True)
+    loss_fn = DiceLoss(softmax=True)
 
     """ Training the model """
     best_valid_loss = float("inf")
@@ -114,8 +114,29 @@ if __name__ == "__main__":
         train_loss = train(model, train_loader, optimizer, loss_fn, device)
         valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
-        writer.add_scalar('Training Loss', train_loss, iteration_n)
-        writer.add_scalar('Validation Loss', valid_loss, iteration_n)
+        score = [0.0, 0.0, 0.0, 0.0, 0.0]
+        if iteration_n+1 % 60 == 0:
+            model_val = build_unet()
+            model_val = model.to(device)
+            model_val.load_state_dict(torch.load(checkpoint_path, map_location=device))
+            model_val.eval()
+
+            score = calculate_metrics(y)
+            writer.add_scalrs('Validation score', {'score_jaccard': score[0],
+                                                   'score_f1': score[0],
+                                                   'score_recall': score[0],
+                                                   'score_precision': score[0],
+                                                   'score_acc': score[0]},
+                              iteration_n)
+
+
+        writer.add_scalar(f'Training Loss UNET_lr_{lr}_bs_{batch_size}', train_loss, iteration_n)
+        writer.add_scalar(f'Validation Loss UNET_lr_{lr}_bs_{batch_size}', valid_loss, iteration_n)
+
+        if iteration_n+1==1000:
+            lr1 = 1e-4
+        elif iteration_n+1==2000:
+            lr1 = 5e-5
 
         """ Saving the model """
         if valid_loss < best_valid_loss:

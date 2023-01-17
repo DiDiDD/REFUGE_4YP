@@ -22,7 +22,7 @@ batch_size = args.b_s
 gpu_index = args.gpu_index
 '''Tensorboard'''
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter('/home/mans4021/Desktop/new_data/REFUGE2/test/test_score/', comment= f'UNET_lr_{lr}_bs_{batch_size}', filename_suffix= f'UNET_lr_{lr}_bs_{batch_size}')
+writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/UNET_lr_{lr}_bs_{batch_size}', comment= f'UNET_lr_{lr}_bs_{batch_size}')
 
 '''Initialisation'''
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
@@ -92,11 +92,11 @@ if __name__ == "__main__":
     precision = metrics_score[3]/len(test_x)
     acc = metrics_score[4]/len(test_x)
     for x in range(len(jaccard)):
-        writer.add_scalar('Jaccard Score', jaccard[x],x)
-        writer.add_scalar('F1 Score', f1[x], x)
-        writer.add_scalar('Recall Score', recall[x], x)
-        writer.add_scalar('Precision Score', precision[x], x)
-        writer.add_scalar('Accuracy Score', acc[x], x)
+        writer.add_scalar(f'Jaccard Score UNET_lr_{lr}_bs_{batch_size}', jaccard[x],x)
+        writer.add_scalar(f'F1 Score UNET_lr_{lr}_bs_{batch_size}', f1[x], x)
+        writer.add_scalar(f'Recall Score UNET_lr_{lr}_bs_{batch_size}', recall[x], x)
+        writer.add_scalar(f'Precision Score UNET_lr_{lr}_bs_{batch_size}', precision[x], x)
+        writer.add_scalar(f'Accuracy Score UNET_lr_{lr}_bs_{batch_size}', acc[x], x)
         print('Jaccard Score', jaccard[x], x)
         print('F1 Score', f1[x], x)
         print('Recall Score', recall[x], x)
