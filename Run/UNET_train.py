@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from data import DriveDataset
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
-from monai.losses import DiceLoss
+from monai.losses import DiceCELoss
 from utils import seeding, train_time
 import torch
 
@@ -90,9 +90,12 @@ if __name__ == "__main__":
     W = 512
     size = (H, W)
     iteration = 5000  #change
-    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}.pth, 'x')
+    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}_lowloss.pth', 'x')
     f.close()
-    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}.pth'
+    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}_final.pth', 'x')
+    f.close()
+    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}_lowloss.pth'
+    checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}_final.pth'
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)
@@ -116,7 +119,7 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
-    loss_fn = DiceLoss(softmax=True)
+    loss_fn = DiceCELoss(softmax=True, lambda_dice=0.5, lambda_ce=0.5)
 
     """ Training the model """
     best_valid_loss = float("inf")
@@ -142,6 +145,9 @@ if __name__ == "__main__":
             print(data_str)
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), checkpoint_path)
+
+        if iteration_n+1 == iteration:
+            torch.save(model.state_dict(), checkpoint_path_final)
 
         end_time = time.time()
         iteration_mins, iteration_secs = train_time(start_time, end_time)
