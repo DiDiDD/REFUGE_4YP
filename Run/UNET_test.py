@@ -33,12 +33,11 @@ def mask_parse(mask):
     return mask
 
 if __name__ == "__main__":
-    """ Seeding, why 42 ???
+    ''' Seeding, why 42 ???
     Douglas Adams himself revealed the reason why he chose 42 in this message. 
     “It was a joke. It had to be a number, an ordinary, smallish number, and I chose that one. 
-    I sat at my desk, stared into the garden and thought ‘42 will do!’ ”"""
+    I sat at my desk, stared into the garden and thought ‘42 will do!’ '''
     seeding(42)
-    """ Folders """
     create_dir(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/lr_{lr}_bs_{batch_size}")
 
     """ Load dataset """
@@ -64,14 +63,14 @@ if __name__ == "__main__":
     for i in tqdm(range(dataset_size)):
         with torch.no_grad():
             '''Prediction'''
-            image = test_dataset[i][0].unsqueeze(0).to(device)              # (1,3,512,512)
-            ori_mask = test_dataset[i][1].squeeze(0).to(device)               # (512,512)
-            pred_y = model(image).squeeze(0)                       # (3,512,512)
-            pred_y = torch.softmax(pred_y, dim=0)                         # (3,512,512)
+            image = test_dataset[i][0].unsqueeze(0).to(device)            # (1, 3, 512, 512)
+            ori_mask = test_dataset[i][1].squeeze(0).to(device)           # (512, 512)
+            pred_y = model(image).squeeze(0)                              # (3, 512, 512)
+            pred_y = torch.softmax(pred_y, dim=0)                         # (3, 512, 512)
             pred_mask = torch.argmax(pred_y, dim=0).type(torch.int64)     # (512, 512)
             score = calculate_metrics(pred_mask, ori_mask)
             metrics_score = list(map(add, metrics_score, score))
-            pred_mask = pred_mask.cpu().numpy()        ## (512, 512)
+            pred_mask = pred_mask.cpu().numpy()                           # (512, 512)
             ori_mask = ori_mask.cpu().numpy()
             '''Scale value back to image'''
             pred_mask = np.where(pred_mask == 2, 255, pred_mask)

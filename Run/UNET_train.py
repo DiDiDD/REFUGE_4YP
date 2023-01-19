@@ -6,8 +6,7 @@ from data import DriveDataset
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
 from monai.losses import DiceLoss
-from utils import create_dir, seeding, calculate_metrics
-from utils import seeding, create_dir, train_time
+from utils import seeding, train_time
 import torch
 
 import argparse
@@ -25,6 +24,19 @@ writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/UNET_lr_{l
 
 '''Initialisation'''
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
+
+model_su = SwinUNETR(img_size = [512, 512], in_channels = 3 , out_channels = 1,
+                    depths=(2, 2, 2, 2),
+                    num_heads=(3, 6, 12, 24),
+                    feature_size=24,
+                    norm_name='batch',
+                    drop_rate=0.0,
+                    attn_drop_rate=0.0,
+                    dropout_path_rate=0.0,
+                    normalize=True,
+                    use_checkpoint=False,
+                    spatial_dims=2,
+                    downsample='merging')
 
 def train(model, loader, optimizer, loss_fn, device):
     iteration_loss = 0.0
@@ -77,7 +89,7 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (H, W)
-    iteration = 3000  #change
+    iteration = 5000  #change
     f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth', 'x')
     f.close()
     checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth'
@@ -114,28 +126,13 @@ if __name__ == "__main__":
         train_loss = train(model, train_loader, optimizer, loss_fn, device)
         valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
-        score = [0.0, 0.0, 0.0, 0.0, 0.0]
-        if iteration_n+1 % 60 == 0:
-            model_val = build_unet()
-            model_val = model.to(device)
-            model_val.load_state_dict(torch.load(checkpoint_path, map_location=device))
-            model_val.eval()
-
-            score = calculate_metrics(y)
-            writer.add_scalrs('Validation score', {'score_jaccard': score[0],
-                                                   'score_f1': score[0],
-                                                   'score_recall': score[0],
-                                                   'score_precision': score[0],
-                                                   'score_acc': score[0]},
-                              iteration_n)
-
-
         writer.add_scalar(f'Training Loss UNET_lr_{lr}_bs_{batch_size}', train_loss, iteration_n)
         writer.add_scalar(f'Validation Loss UNET_lr_{lr}_bs_{batch_size}', valid_loss, iteration_n)
 
-        if iteration_n+1==1000:
+        '''updating the learning rate'''
+        if iteration_n+1 == 1000:
             lr1 = 1e-4
-        elif iteration_n+1==2000:
+        elif iteration_n+1 == 2000:
             lr1 = 5e-5
 
         """ Saving the model """

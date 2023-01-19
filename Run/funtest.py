@@ -11,17 +11,3 @@ from UNet_model import build_unet
 from utils import seeding, create_dir, train_time
 import random
 import os
-
-
-seed = 40
-random.seed(seed)
-os.environ["PYTHONHASHSEED"] = str(seed)
-print(os.environ["PYTHONHASHSEED"])
-np.random.seed(seed)
-print(np.random.seed(seed))
-torch.manual_seed(seed)
-print(torch.manual_seed(seed))
-torch.cuda.manual_seed(seed)
-print(torch.cuda.manual_seed(seed))
-torch.backends.cudnn.deterministic = True
-print(torch.backends.cudnn.deterministic)
