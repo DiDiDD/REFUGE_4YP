@@ -92,7 +92,7 @@ if __name__ == "__main__":
     iteration = 5000  #change
     f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth', 'x')
     f.close()
-    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth'
+    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}.pth'
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)
@@ -128,12 +128,13 @@ if __name__ == "__main__":
 
         writer.add_scalar(f'Training Loss UNET_lr_{lr}_bs_{batch_size}', train_loss, iteration_n)
         writer.add_scalar(f'Validation Loss UNET_lr_{lr}_bs_{batch_size}', valid_loss, iteration_n)
+        writer.add_scalar(f'Validation DICE UNET_lr_{lr}_bs_{batch_size}', 1-valid_loss, iteration_n)
 
         '''updating the learning rate'''
-        if iteration_n+1 == 1000:
-            lr1 = 1e-4
-        elif iteration_n+1 == 2000:
-            lr1 = 5e-5
+        # if iteration_n+1 == 1000:
+        #     lr1 = 1e-4
+        # elif iteration_n+1 == 2000:
+        #     lr1 = 5e-5
 
         """ Saving the model """
         if valid_loss < best_valid_loss:
