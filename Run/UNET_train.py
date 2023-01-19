@@ -90,7 +90,7 @@ if __name__ == "__main__":
     W = 512
     size = (H, W)
     iteration = 5000  #change
-    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth', 'x')
+    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}.pth, 'x')
     f.close()
     checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}.pth'
 
