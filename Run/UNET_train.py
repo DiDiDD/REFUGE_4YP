@@ -20,12 +20,12 @@ gpu_index = args.gpu_index
 batch_size = args.b_s
 
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/UNET_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
+writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/swin_unetr_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
 
 '''Initialisation'''
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 
-model_su = SwinUNETR(img_size = [512, 512], in_channels = 3 , out_channels = 1,
+model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
                     depths=(2, 2, 2, 2),
                     num_heads=(3, 6, 12, 24),
                     feature_size=24,
@@ -89,13 +89,13 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (H, W)
-    iteration = 5000  #change
-    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}_lowloss.pth', 'x')
+    iteration = 2000  #change
+    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_swin/lr_{lr}_bs_{batch_size}_lowloss.pth', 'x')
     f.close()
-    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}_final.pth', 'x')
+    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_swin/lr_{lr}_bs_{batch_size}_final.pth', 'x')
     f.close()
-    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}_lowloss.pth'
-    checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet/lr_{lr}_bs_{batch_size}_final.pth'
+    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_swin/lr_{lr}_bs_{batch_size}_lowloss.pth'
+    checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_swin/lr_{lr}_bs_{batch_size}_final.pth'
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         num_workers=4
     )
 
-    model = build_unet().to(device)
+    model = model_su.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
@@ -129,9 +129,9 @@ if __name__ == "__main__":
         train_loss = train(model, train_loader, optimizer, loss_fn, device)
         valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
-        writer.add_scalar(f'Training Loss UNET_lr_{lr}_bs_{batch_size}', train_loss, iteration_n)
-        writer.add_scalar(f'Validation Loss UNET_lr_{lr}_bs_{batch_size}', valid_loss, iteration_n)
-        writer.add_scalar(f'Validation DICE UNET_lr_{lr}_bs_{batch_size}', 1-valid_loss, iteration_n)
+        writer.add_scalar(f'Training Loss swin_lr_{lr}_bs_{batch_size}', train_loss, iteration_n)
+        writer.add_scalar(f'Validation Loss swin_lr_{lr}_bs_{batch_size}', valid_loss, iteration_n)
+        writer.add_scalar(f'Validation DICE swin_lr_{lr}_bs_{batch_size}', 1-valid_loss, iteration_n)
 
         '''updating the learning rate'''
         # if iteration_n+1 == 1000:
