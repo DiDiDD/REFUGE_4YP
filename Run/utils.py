@@ -4,7 +4,6 @@ import numpy as np
 import torch
 from torchmetrics.functional.classification import multiclass_jaccard_index, multiclass_f1_score, multiclass_precision, multiclass_recall, multiclass_accuracy
 
-
 """ Seeding the randomness. """
 def seeding(seed):
     random.seed(seed)
@@ -27,7 +26,7 @@ def train_time(start_time, end_time):
     return elapsed_mins, elapsed_secs
 
 def calculate_metrics(y_pred, y_true):
-    score_jaccard_2 = multiclass_jaccard_index(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
+    score_jaccard_2 = multiclass_jaccard_index(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)    # tensor size==0, so we need to unsqueeze
     score_f1_2 = multiclass_f1_score(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
     score_precision_2 = multiclass_precision(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
     score_recall_2 = multiclass_recall(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
@@ -49,3 +48,9 @@ def calculate_metrics(y_pred, y_true):
     score_acc = torch.cat((score_acc_0_1, score_acc_2))
 
     return [score_jaccard, score_f1, score_recall, score_precision, score_acc]
+
+
+def data_aug(data_x, data_y, seed_num):
+    torch.manual_seed(seed_num)
+    angle = torch.rand() * 360
+

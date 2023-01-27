@@ -98,6 +98,6 @@ if __name__ == "__main__":
     create_dir("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/")
 
     """ Data augmentation """
-    augment_data(train_x, train_y, "/home/mans4021/Desktop/new_data/REFUGE2/train/", augment=False)
+    augment_data(train_x, train_y, "/home/mans4021/Desktop/new_data/REFUGE2/train/", augment=True)
     augment_data(val_x, val_y, "/home/mans4021/Desktop/new_data/REFUGE2/val/", augment=False)
     augment_data(test_x, test_y, "/home/mans4021/Desktop/new_data/REFUGE2/test/", augment=False)
