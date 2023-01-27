@@ -33,7 +33,7 @@ args = parser.parse_args()
 lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
 '''select between two model'''
 if model_name == 'unet':
-    model = build_unet
+    model = build_unet()
     model_text = 'UNET'
 elif model_name == 'sur':
     model = model_su
