@@ -5,26 +5,6 @@ from torch.utils.data import DataLoader
 from data import DriveDataset
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
-from monai.losses import DiceCELoss
-from utils import seeding, train_time
-import torch
-
-import argparse
-parser = argparse.ArgumentParser(description='Specify Parameters')
-parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
-parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
-parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
-args = parser.parse_args()
-lr = args.lr
-gpu_index = args.gpu_index
-batch_size = args.b_s
-
-from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/swin_unetr_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
-
-'''Initialisation'''
-device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
-
 model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
                     depths=(2, 2, 2, 2),
                     num_heads=(3, 6, 12, 24),
@@ -37,6 +17,33 @@ model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
                     use_checkpoint=False,
                     spatial_dims=2,
                     downsample='merging')
+from monai.losses import DiceCELoss
+from utils import seeding, train_time
+import torch
+
+import argparse
+parser = argparse.ArgumentParser(description='Specify Parameters')
+parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
+parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
+parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
+parser.add_argument('model', metavar='model', type=str, choice = ['unet', 'sur'], help='Specify a model')
+args = parser.parse_args()
+lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
+'''select between two model'''
+if model_name == 'unet':
+    model = build_unet()
+    model_text = 'UNET'
+elif model_name == 'sur':
+    model = model_su()
+    model_text = 'swin_unetr'
+
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/{model_text}_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
+
+
+'''Initialisation'''
+device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
+
 
 def train(model, loader, optimizer, loss_fn, device):
     iteration_loss = 0.0
@@ -89,13 +96,13 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (H, W)
-    iteration = 2000  #change
-    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_swin/lr_{lr}_bs_{batch_size}_lowloss.pth', 'x')
+    iteration = 2000 #change
+    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth', 'x')
     f.close()
-    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_swin/lr_{lr}_bs_{batch_size}_final.pth', 'x')
+    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth', 'x')
     f.close()
-    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_swin/lr_{lr}_bs_{batch_size}_lowloss.pth'
-    checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_swin/lr_{lr}_bs_{batch_size}_final.pth'
+    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth'
+    checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth'
 
     """ Dataset and loader """
     train_dataset = DriveDataset(train_x, train_y)
@@ -115,7 +122,7 @@ if __name__ == "__main__":
         num_workers=4
     )
 
-    model = model_su.to(device)
+    model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)

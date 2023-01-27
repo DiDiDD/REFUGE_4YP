@@ -9,6 +9,18 @@ from tqdm import tqdm
 import torch
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
+model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
+                    depths=(2, 2, 2, 2),
+                    num_heads=(3, 6, 12, 24),
+                    feature_size=24,
+                    norm_name='batch',
+                    drop_rate=0.0,
+                    attn_drop_rate=0.0,
+                    dropout_path_rate=0.0,
+                    normalize=True,
+                    use_checkpoint=False,
+                    spatial_dims=2,
+                    downsample='merging')
 from utils import create_dir, seeding, calculate_metrics
 '''command line initialise hyperparameter'''
 import argparse
@@ -16,13 +28,19 @@ parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
+parser.add_argument('model', metavar='model', type=str, choice = ['unet', 'sur'], help='Specify a model')
 args = parser.parse_args()
-lr = args.lr
-batch_size = args.b_s
-gpu_index = args.gpu_index
+lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
+'''select between two model'''
+if model_name == 'unet':
+    model = build_unet()
+    model_text = 'UNET'
+elif model_name == 'sur':
+    model = model_su()
+    model_text = 'swin_unetr'
 '''Tensorboard'''
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/UNET_lr_{lr}_bs_{batch_size}', comment= f'UNET_lr_{lr}_bs_{batch_size}')
+writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/{model_text}_lr_{lr}_bs_{batch_size}', comment= f'UNET_lr_{lr}_bs_{batch_size}')
 
 '''Initialisation'''
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
@@ -50,10 +68,9 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (W, H)
-    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_unet.pth/lr_{lr}_bs_{batch_size}.pth'
+    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}.pth/lr_{lr}_bs_{batch_size}.pth'
 
     """ Load the checkpoint """
-    model = build_unet()
     model = model.to(device)
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
@@ -83,7 +100,7 @@ if __name__ == "__main__":
             line = np.ones((512, 20, 3)) * 255     # white line
             '''Create image for us to analyse visually '''
             cat_images = np.concatenate([image.squeeze().permute(1,2,0), line, ori_mask, line, pred_mask], axis=1)
-            cv2.imwrite(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/lr_{lr}_bs_{batch_size}/{i}.png", cat_images)
+            cv2.imwrite(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/{model_text}_lr_{lr}_bs_{batch_size}/{i}.png", cat_images)
 
     jaccard = metrics_score[0]/len(test_x)
     f1 = metrics_score[1]/len(test_x)
