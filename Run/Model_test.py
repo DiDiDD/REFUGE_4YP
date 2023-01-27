@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
-parser.add_argument('model', metavar='model', type=str, choice = ['unet', 'sur'], help='Specify a model')
+parser.add_argument('model', metavar='model', type=str, choices = ['unet', 'sur'], help='Specify a model')
 args = parser.parse_args()
 lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
 '''select between two model'''
@@ -36,7 +36,7 @@ if model_name == 'unet':
     model = build_unet()
     model_text = 'UNET'
 elif model_name == 'sur':
-    model = model_su()
+    model = model_su
     model_text = 'swin_unetr'
 '''Tensorboard'''
 from torch.utils.tensorboard import SummaryWriter
@@ -68,10 +68,11 @@ if __name__ == "__main__":
     H = 512
     W = 512
     size = (W, H)
-    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}.pth/lr_{lr}_bs_{batch_size}.pth'
+    checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth'
+    checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth'
 
     """ Load the checkpoint """
-    model = model.to(device)
+    model.to(device)
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
 
@@ -99,7 +100,7 @@ if __name__ == "__main__":
             ori_mask, pred_mask = mask_parse(ori_mask), mask_parse(pred_mask)
             line = np.ones((512, 20, 3)) * 255     # white line
             '''Create image for us to analyse visually '''
-            cat_images = np.concatenate([image.squeeze().permute(1,2,0), line, ori_mask, line, pred_mask], axis=1)
+            cat_images = np.concatenate([image.squeeze().permute(1,2,0).cpu().numpy(), line, ori_mask, line, pred_mask], axis=1)
             cv2.imwrite(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/{model_text}_lr_{lr}_bs_{batch_size}/{i}.png", cat_images)
 
     jaccard = metrics_score[0]/len(test_x)
@@ -108,11 +109,11 @@ if __name__ == "__main__":
     precision = metrics_score[3]/len(test_x)
     acc = metrics_score[4]/len(test_x)
     for x in range(len(jaccard)):
-        writer.add_scalar(f'Jaccard Score UNET_lr_{lr}_bs_{batch_size}', jaccard[x],x)
-        writer.add_scalar(f'F1 Score UNET_lr_{lr}_bs_{batch_size}', f1[x], x)
-        writer.add_scalar(f'Recall Score UNET_lr_{lr}_bs_{batch_size}', recall[x], x)
-        writer.add_scalar(f'Precision Score UNET_lr_{lr}_bs_{batch_size}', precision[x], x)
-        writer.add_scalar(f'Accuracy Score UNET_lr_{lr}_bs_{batch_size}', acc[x], x)
+        writer.add_scalar(f'Jaccard Score {model_text}_lr_{lr}_bs_{batch_size}', jaccard[x],x)
+        writer.add_scalar(f'F1 Score {model_text}_lr_{lr}_bs_{batch_size}', f1[x], x)
+        writer.add_scalar(f'Recall Score {model_text}_lr_{lr}_bs_{batch_size}', recall[x], x)
+        writer.add_scalar(f'Precision Score {model_text}_lr_{lr}_bs_{batch_size}', precision[x], x)
+        writer.add_scalar(f'Accuracy Score {model_text}_lr_{lr}_bs_{batch_size}', acc[x], x)
         print('Jaccard Score', jaccard[x], x)
         print('F1 Score', f1[x], x)
         print('Recall Score', recall[x], x)

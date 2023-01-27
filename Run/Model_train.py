@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
-parser.add_argument('model', metavar='model', type=str, choice = ['unet', 'sur'], help='Specify a model')
+parser.add_argument('model', metavar='model', type=str, choices = ['unet', 'sur'], help='Specify a model')
 args = parser.parse_args()
 lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
 '''select between two model'''
