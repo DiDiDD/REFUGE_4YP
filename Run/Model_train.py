@@ -2,7 +2,7 @@ import time
 from glob import glob
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-from data import DriveDataset
+from data import train_test_split
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
 model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
@@ -38,7 +38,7 @@ elif model_name == 'sur':
     model_text = 'swin_unetr'
 
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/{model_text}_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
+writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
 
 
 '''Initialisation'''
@@ -75,7 +75,6 @@ def evaluate(model, loader, loss_fn, device):
             y_pred = model(x)
             loss = loss_fn(y_pred, y)
             val_loss += loss.item()
-
         val_loss = val_loss/len(loader)
     return val_loss
 
@@ -105,8 +104,8 @@ if __name__ == "__main__":
     checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth'
 
     """ Dataset and loader """
-    train_dataset = DriveDataset(train_x, train_y)
-    valid_dataset = DriveDataset(valid_x, valid_y)
+    train_dataset = train_test_split(train_x, train_y)
+    valid_dataset = train_test_split(valid_x, valid_y)
 
     train_loader = DataLoader(
         dataset=train_dataset,
@@ -126,7 +125,7 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
-    loss_fn = DiceCELoss(softmax=True, lambda_dice=0.5, lambda_ce=0.5)
+    loss_fn = DiceCELoss(include_background=False, softmax=True, lambda_dice=0.5, lambda_ce=0.5)
 
     """ Training the model """
     best_valid_loss = float("inf")
@@ -136,9 +135,9 @@ if __name__ == "__main__":
         train_loss = train(model, train_loader, optimizer, loss_fn, device)
         valid_loss = evaluate(model, valid_loader, loss_fn, device)
 
-        writer.add_scalar(f'Training Loss swin_lr_{lr}_bs_{batch_size}', train_loss, iteration_n)
-        writer.add_scalar(f'Validation Loss swin_lr_{lr}_bs_{batch_size}', valid_loss, iteration_n)
-        writer.add_scalar(f'Validation DICE swin_lr_{lr}_bs_{batch_size}', 1-valid_loss, iteration_n)
+        writer.add_scalar(f'Training Loss', train_loss, iteration_n)
+        writer.add_scalar(f'Validation Loss', valid_loss, iteration_n)
+        writer.add_scalar(f'Validation DICE', 1-valid_loss, iteration_n)
 
         '''updating the learning rate'''
         # if iteration_n+1 == 1000:

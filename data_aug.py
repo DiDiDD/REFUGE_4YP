@@ -5,10 +5,14 @@ from glob import glob
 from tqdm import tqdm
 from albumentations import HorizontalFlip, VerticalFlip, Rotate
 
+
 """ Create a directory """
+
+
 def create_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
 
 def load_data(path_train_x, path_train_y, path_val_x, path_val_y, path_test_x, path_test_y):
     train_x = sorted(glob(os.path.join(path_train_x, '*.jpg')))
@@ -19,6 +23,7 @@ def load_data(path_train_x, path_train_y, path_val_x, path_val_y, path_test_x, p
     test_y = sorted(glob(os.path.join(path_test_y, '*.bmp')))
 
     return (train_x, train_y), (val_x, val_y), (test_x, test_y)
+
 
 def augment_data(images, masks, save_path, augment=True):
     size = (512, 512)
@@ -31,7 +36,7 @@ def augment_data(images, masks, save_path, augment=True):
         x = cv2.imread(x, cv2.IMREAD_COLOR)
         y = cv2.imread(y)
 
-        if augment == True:
+        if augment:
             aug = HorizontalFlip(p=1.0)
             augmented = aug(image=x, mask=y)
             x1 = augmented["image"]
@@ -70,6 +75,7 @@ def augment_data(images, masks, save_path, augment=True):
 
             index += 1
 
+
 if __name__ == "__main__":
     """ Seeding """
     np.random.seed(42)
@@ -97,7 +103,7 @@ if __name__ == "__main__":
     create_dir("/home/mans4021/Desktop/new_data/REFUGE2/test/image/")
     create_dir("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/")
 
-    """ Data augmentation """
+    """ Data augmentation"""
     augment_data(train_x, train_y, "/home/mans4021/Desktop/new_data/REFUGE2/train/", augment=True)
     augment_data(val_x, val_y, "/home/mans4021/Desktop/new_data/REFUGE2/val/", augment=False)
     augment_data(test_x, test_y, "/home/mans4021/Desktop/new_data/REFUGE2/test/", augment=False)
