@@ -4,6 +4,10 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 from data import train_test_split
 from UNet_model import build_unet
+from monai.losses import DiceCELoss
+from monai.losses import DiceLoss
+from utils import seeding, train_time
+import torch
 from monai.networks.nets import SwinUNETR
 model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
                     depths=(2, 2, 2, 2),
@@ -17,11 +21,6 @@ model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
                     use_checkpoint=False,
                     spatial_dims=2,
                     downsample='merging')
-from monai.losses import DiceCELoss
-from monai.losses import DiceLoss
-from utils import seeding, train_time
-import torch
-
 import argparse
 parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')

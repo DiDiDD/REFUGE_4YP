@@ -9,6 +9,7 @@ from tqdm import tqdm
 import torch
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
+from monai.losses import DiceLoss
 
 model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
                      depths=(2, 2, 2, 2),
@@ -97,6 +98,7 @@ if __name__ == "__main__":
             metrics_score = list(map(add, metrics_score, score))
             pred_mask = pred_mask.cpu().numpy()  # (512, 512)
             ori_mask = ori_mask.cpu().numpy()
+
             '''Scale value back to image'''
             pred_mask = np.where(pred_mask == 2, 255, pred_mask)
             pred_mask = np.where(pred_mask == 1, 128, pred_mask)
