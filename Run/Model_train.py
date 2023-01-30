@@ -126,7 +126,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
     train_loss_fn = DiceCELoss(include_background=False, softmax=True, lambda_dice=0.5, lambda_ce=0.5, to_onehot_y=True)
-    eval_loss_fn  = DiceLoss(average='none', softmax=True, include_background=True, to_onehot_y=True)
+    eval_loss_fn  = DiceLoss(reduction='none', softmax=True, include_background=True, to_onehot_y=True)
 
     """ Training the model """
     best_valid_loss = float("inf")
