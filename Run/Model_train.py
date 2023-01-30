@@ -18,6 +18,7 @@ model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
                     spatial_dims=2,
                     downsample='merging')
 from monai.losses import DiceCELoss
+from monai.losses import DiceLoss
 from utils import seeding, train_time
 import torch
 
@@ -45,12 +46,10 @@ writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{mode
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 
 
-def train(model, loader, optimizer, loss_fn, device):
+def train(model, data, optimizer, loss_fn, device):
     iteration_loss = 0.0
     model.train()
-    for x, y in loader:
-        y = torch.nn.functional.one_hot(y, 3).squeeze()
-        y = y.permute(0,3,1,2)
+    for x, y in data:
         x = x.to(device, dtype=torch.float32)
         y = y.to(device, dtype=torch.float32)
         optimizer.zero_grad()
@@ -60,23 +59,25 @@ def train(model, loader, optimizer, loss_fn, device):
         optimizer.step()
         iteration_loss += loss.item()
 
-    iteration_loss = iteration_loss/len(loader)
+    iteration_loss = iteration_loss/len(data)
     return iteration_loss
 
-def evaluate(model, loader, loss_fn, device):
+def evaluate(model, data, loss_fn, device):
     val_loss = 0.0
     model.eval()
     with torch.no_grad():
-        for x, y in loader:
-            y = torch.nn.functional.one_hot(y, 3).squeeze()
-            y = y.permute(0, 3, 1, 2)
+        for x, y in data:
             x = x.to(device, dtype=torch.float32)
             y = y.to(device)
+            y_12_comb = torch.where(y==2, 1, y)   # prepare for disc
             y_pred = model(x)
             loss = loss_fn(y_pred, y)
-            val_loss += loss.item()
-        val_loss = val_loss/len(loader)
-    return val_loss
+            l_12 = loss_fn(y_pred, y_12_comb)
+            l_0, l_1, l_2 = loss[0], loss[1], loss[2]
+            loss = loss + l_1.item()/2 + l_2.item()/2
+            val_loss += loss
+        val_loss = val_loss/len(data)
+    return  l_0, l_1, l_2, l_12, val_loss
 
 if __name__ == "__main__":
     """ Seeding """
@@ -125,19 +126,22 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
-    loss_fn = DiceCELoss(include_background=False, softmax=True, lambda_dice=0.5, lambda_ce=0.5)
+    train_loss_fn = DiceCELoss(include_background=False, softmax=True, lambda_dice=0.5, lambda_ce=0.5, to_onehot_y=True)
+    eval_loss_fn  = DiceLoss(average='none', softmax=True, include_background=True, to_onehot_y=True)
 
     """ Training the model """
     best_valid_loss = float("inf")
 
     for iteration_n in tqdm(range(iteration)):
         start_time = time.time()
-        train_loss = train(model, train_loader, optimizer, loss_fn, device)
-        valid_loss = evaluate(model, valid_loader, loss_fn, device)
+        train_loss = train(model, train_loader, optimizer, train_loss_fn, device)
+        l_0, l_1, l_2, l_12, valid_loss = evaluate(model, valid_loader, eval_loss_fn, device)
 
         writer.add_scalar(f'Training Loss', train_loss, iteration_n)
-        writer.add_scalar(f'Validation Loss', valid_loss, iteration_n)
-        writer.add_scalar(f'Validation DICE', 1-valid_loss, iteration_n)
+        writer.add_scalar(f'Validation Background DICE', 1 - l_0, iteration_n)
+        writer.add_scalar(f'Validation Cup DICE', 1 - l_1, iteration_n)
+        writer.add_scalar(f'Validation outer ring DICE', 1 - l_2, iteration_n)
+        writer.add_scalar(f'Validation Disc DICE', 1 - l_12 , iteration_n)
 
         '''updating the learning rate'''
         # if iteration_n+1 == 1000:
