@@ -62,21 +62,24 @@ def train(model, data, optimizer, loss_fn, device):
     return iteration_loss
 
 def evaluate(model, data, loss_fn, device):
-    val_loss = 0.0
     model.eval()
     with torch.no_grad():
         for x, y in data:
             x = x.to(device, dtype=torch.float32)
             y = y.to(device)
-            y_12_comb = torch.where(y==2, 1, y)   # prepare for disc
+            y_12_comb = torch.where(y == 2, 1, y)   # prepare for disc
             y_pred = model(x)
-            loss = loss_fn(y_pred, y)
-            l_12 = loss_fn(y_pred, y_12_comb)[1]
-            l_0, l_1, l_2 = loss[0], loss[1], loss[2]
-            loss = loss + l_1.item()/2 + l_2.item()/2
+            loss = loss_fn(y_pred, y).squeeze().sum(dim=0)
+            l_12 = loss_fn(y_pred, y_12_comb).squeeze().sum(dim=0)[1].item()
+            l_0, l_1, l_2 = loss[0].item(), loss[1].item(), loss[2].item()
+            val_loss = l_1/2 + l_2/2
             val_loss += loss
         val_loss = val_loss/len(data)
-    return  l_0, l_1, l_2, l_12, val_loss
+        l1 = l_1/len(data)
+        l2 = l_2/len(data)
+        l0 = l_0/len(data)
+        l12 = l_12/len(data)
+    return  l0, l1, l2, l12, val_loss
 
 if __name__ == "__main__":
     """ Seeding """
