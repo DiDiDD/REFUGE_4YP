@@ -71,7 +71,7 @@ def evaluate(model, data, loss_fn, device):
             y_12_comb = torch.where(y==2, 1, y)   # prepare for disc
             y_pred = model(x)
             loss = loss_fn(y_pred, y)
-            l_12 = loss_fn(y_pred, y_12_comb)
+            l_12 = loss_fn(y_pred, y_12_comb)[1]
             l_0, l_1, l_2 = loss[0], loss[1], loss[2]
             loss = loss + l_1.item()/2 + l_2.item()/2
             val_loss += loss
