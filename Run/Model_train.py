@@ -73,7 +73,6 @@ def evaluate(model, data, loss_fn, device):
             l_12 = loss_fn(y_pred, y_12_comb).squeeze().sum(dim=0)[1].item()
             l_0, l_1, l_2 = loss[0].item(), loss[1].item(), loss[2].item()
             val_loss = l_1/2 + l_2/2
-            val_loss += loss
         val_loss = val_loss/len(data)
         l1 = l_1/len(data)
         l2 = l_2/len(data)
