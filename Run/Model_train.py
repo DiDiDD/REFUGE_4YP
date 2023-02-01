@@ -79,6 +79,7 @@ def evaluate(model, data, loss_fn, device):
         l2 = l_2/len(data)
         l0 = l_0/len(data)
         l12 = l_12/len(data)
+        print( l0, l1, l2, l12, val_loss)
     return  l0, l1, l2, l12, val_loss
 
 if __name__ == "__main__":
