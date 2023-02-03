@@ -45,7 +45,7 @@ elif model_name == 'sur':
 '''Tensorboard'''
 from torch.utils.tensorboard import SummaryWriter
 
-writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/{model_text}_lr_{lr}_bs_{batch_size}',
+writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}',
                        comment=f'UNET_lr_{lr}_bs_{batch_size}')
 
 '''Initialisation'''
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     “It was a joke. It had to be a number, an ordinary, smallish number, and I chose that one. 
     I sat at my desk, stared into the garden and thought ‘42 will do!’ '''
     seeding(42)
-    create_dir(f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/lr_{lr}_bs_{batch_size}")
+    create_dir(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/results/")
 
     """ Load dataset """
     test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image/*"))
@@ -112,7 +112,7 @@ if __name__ == "__main__":
             cat_images = np.concatenate(
                 [image.squeeze().permute(1, 2, 0).cpu().numpy(), line, ori_mask, line, pred_mask], axis=1)
             cv2.imwrite(
-                f"/home/mans4021/Desktop/new_data/REFUGE2/test/results/{model_text}_lr_{lr}_bs_{batch_size}/{i}.png",
+                f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/results/{i}.png",
                 cat_images)
 
     jaccard = metrics_score[0] / len(test_x)
