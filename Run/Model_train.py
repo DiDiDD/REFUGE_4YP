@@ -61,9 +61,9 @@ def train(model, data, optimizer, loss_fn, device):
 
 def evaluate(model, data, loss_fn, device):
     model.eval()
+    val_loss, l0, l1, l2, l12 = 0.0, 0.0, 0.0, 0.0, 0.0
     with torch.no_grad():
         for x, y in data:
-            print(len(data))
             x = x.to(device, dtype=torch.float32)
             y = y.to(device)
             y_12_comb = torch.where(y == 2, 1, y)           # prepare for disc
@@ -72,12 +72,15 @@ def evaluate(model, data, loss_fn, device):
             y_12_comb_pred = torch.where(y_pred == 2, 1, y_pred)
 
             loss = loss_fn(y_pred, y, num_classes=3, average=None)  # return f1, f1_loss_fn requires both in un_one_hot form
-            l12 = loss_fn(y_12_comb_pred, y_12_comb, num_classes=2, average=None,ignore_index=0)[1].item()
+            l_12 = loss_fn(y_12_comb_pred, y_12_comb, num_classes=2, average=None,ignore_index=0)[1].item()
 
             l_0, l_1, l_2 = loss[0].item(), loss[1].item(), loss[2].item()
-            val_loss = l_1/2 + l_2/2
-            print(l_0, l_1, l_2, l12, val_loss)
-    return  l_0, l_1, l_2, l12, val_loss
+            l0 += l_0
+            l1 += l_1
+            l2 += l_2
+            l12 += l_12
+        val_loss += l1/2 + l2/2
+    return  l_0/len(data), l1/len(data), l_2/len(data), l12/len(data), val_loss/len(data)
 
 if __name__ == "__main__":
     """ Seeding """
@@ -112,7 +115,7 @@ if __name__ == "__main__":
 
     valid_loader = DataLoader(
         dataset=valid_dataset,
-        batch_size=batch_size,
+        batch_size=400,
         shuffle=False,
         num_workers=4
     )
@@ -133,10 +136,10 @@ if __name__ == "__main__":
         l_0, l_1, l_2, l_12, valid_loss = evaluate(model, valid_loader, eval_loss_fn, device)
 
         writer.add_scalar(f'Training Loss', train_loss, iteration_n)
-        writer.add_scalar(f'Validation Background DICE', l_0, iteration_n)
-        writer.add_scalar(f'Validation Cup DICE', l_1, iteration_n)
-        writer.add_scalar(f'Validation outer ring DICE', l_2, iteration_n)
-        writer.add_scalar(f'Validation Disc DICE', l_12 , iteration_n)
+        writer.add_scalar(f'Validation Background F1', l_0, iteration_n)
+        writer.add_scalar(f'Validation Cup F1', l_1, iteration_n)
+        writer.add_scalar(f'Validation outer ring F1', l_2, iteration_n)
+        writer.add_scalar(f'Validation Disc F1', l_12 , iteration_n)
 
         '''updating the learning rate'''
         # if iteration_n+1 == 1000:
