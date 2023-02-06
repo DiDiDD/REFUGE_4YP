@@ -17,7 +17,7 @@ class train_test_split(Dataset):
         image = (image-127.5)/127.5
         image = np.transpose(image, (2, 0, 1))
         image = image.astype(np.float32)
-        image = torch.from_numpy(image)
+        image = torch.from_numpy(image)      # (3,512,512)
 
         """ Reading mask """
         mask = cv2.imread(self.masks_path[index], cv2.IMREAD_GRAYSCALE)
@@ -27,7 +27,7 @@ class train_test_split(Dataset):
         mask = mask.astype(np.int64)
         '''convert numpy array into tensor'''
         mask = np.expand_dims(mask, axis=0)
-        mask = torch.from_numpy(mask)
+        mask = torch.from_numpy(mask)        # (1,512,512)
         return image, mask
 
     def __len__(self):

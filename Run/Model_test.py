@@ -1,7 +1,5 @@
-import os, time
 from operator import add
 from data import train_test_split
-from torch.utils.data import DataLoader
 import numpy as np
 from glob import glob
 import cv2
@@ -9,8 +7,20 @@ from tqdm import tqdm
 import torch
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
-from monai.losses import DiceLoss
+from utils import create_dir, seeding, calculate_metrics, mask_parse
+import argparse
+from torch.utils.tensorboard import SummaryWriter
 
+'''command line initialisation '''
+parser = argparse.ArgumentParser(description='Specify Parameters')
+parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
+parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
+parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
+parser.add_argument('model', metavar='model', type=str, choices=['unet', 'sur', 'utnet'], help='Specify a model')
+args = parser.parse_args()
+lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
+
+'''swin_unetr model initialisation'''
 model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
                      depths=(2, 2, 2, 2),
                      num_heads=(3, 6, 12, 24),
@@ -23,59 +33,31 @@ model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
                      use_checkpoint=False,
                      spatial_dims=2,
                      downsample='merging')
-from utils import create_dir, seeding, calculate_metrics
 
-'''command line initialise hyperparameter'''
-import argparse
-
-parser = argparse.ArgumentParser(description='Specify Parameters')
-parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
-parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
-parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
-parser.add_argument('model', metavar='model', type=str, choices=['unet', 'sur'], help='Specify a model')
-args = parser.parse_args()
-lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
 '''select between two model'''
 if model_name == 'unet':
     model = build_unet()
     model_text = 'UNET'
-elif model_name == 'sur':
+elif model_name == 'swin_uetr':
     model = model_su
     model_text = 'swin_unetr'
-'''Tensorboard'''
-from torch.utils.tensorboard import SummaryWriter
+# elif model_name == 'utnet':
+#     model = utnet
+#     model_text = 'utnet'
 
+'''Tensorboard'''
 writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}',
                        comment=f'UNET_lr_{lr}_bs_{batch_size}')
 
-'''Initialisation'''
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
-
-
-def mask_parse(mask):
-    mask = np.expand_dims(mask, axis=-1)  ## (512, 512, 1)
-    mask = np.concatenate([mask, mask, mask], axis=-1)  ## (512, 512, 3)
-    return mask
-
+create_dir(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/results/")
 
 if __name__ == "__main__":
-    ''' Seeding, why 42 ???
-    Douglas Adams himself revealed the reason why he chose 42 in this message. 
-    “It was a joke. It had to be a number, an ordinary, smallish number, and I chose that one. 
-    I sat at my desk, stared into the garden and thought ‘42 will do!’ '''
-    seeding(42)
-    create_dir(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/results/")
-
     """ Load dataset """
     test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image/*"))
     test_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/*"))
     test_dataset = train_test_split(test_x, test_y)
-
-    """ Hyperparameters """
     dataset_size = len(test_x)
-    H = 512
-    W = 512
-    size = (W, H)
     checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth'
     checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth'
 
@@ -120,6 +102,9 @@ if __name__ == "__main__":
     recall = metrics_score[2] / len(test_x)
     precision = metrics_score[3] / len(test_x)
     acc = metrics_score[4] / len(test_x)
+
+    # make the score like: score +- S.D.
+
     for x in range(len(jaccard)):
         writer.add_scalar(f'Jaccard Score', jaccard[x], x)
         writer.add_scalar(f'F1 Score', f1[x], x)

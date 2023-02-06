@@ -36,17 +36,23 @@ def calculate_metrics(y_pred, y_true):
     y_pred_trans = torch.where(y_pred == 2, 1, y_pred)
     y_true_trans = torch.where(y_true == 2, 1, y_true)
 
-    score_jaccard_0_1 = multiclass_jaccard_index(y_pred_trans, y_true_trans, num_classes=2, average=None)
-    score_f1_0_1 = multiclass_f1_score(y_pred_trans, y_true_trans, num_classes=2, average=None)
-    score_precision_0_1 = multiclass_precision(y_pred_trans, y_true_trans, num_classes=2, average=None)
-    score_recall_0_1 = multiclass_recall(y_pred_trans, y_true_trans, num_classes=2, average=None)
-    score_acc_0_1 = multiclass_accuracy(y_pred_trans, y_true_trans, num_classes=2, average=None)
+    score_jaccard_0_12 = multiclass_jaccard_index(y_pred_trans, y_true_trans, num_classes=2, average=None)
+    score_f1_0_12 = multiclass_f1_score(y_pred_trans, y_true_trans, num_classes=2, average=None)
+    score_precision_0_12 = multiclass_precision(y_pred_trans, y_true_trans, num_classes=2, average=None)
+    score_recall_0_12 = multiclass_recall(y_pred_trans, y_true_trans, num_classes=2, average=None)
+    score_acc_0_12 = multiclass_accuracy(y_pred_trans, y_true_trans, num_classes=2, average=None)
 
-    score_jaccard = torch.cat((score_jaccard_0_1, score_jaccard_2))
-    score_f1 = torch.cat((score_f1_0_1, score_f1_2))
-    score_recall = torch.cat((score_recall_0_1, score_recall_2))
-    score_precision = torch.cat((score_precision_0_1, score_precision_2))
-    score_acc = torch.cat((score_acc_0_1, score_acc_2))
+    score_jaccard = torch.cat((score_jaccard_0_12, score_jaccard_2))
+    score_f1 = torch.cat((score_f1_0_12, score_f1_2))
+    score_recall = torch.cat((score_recall_0_12, score_recall_2))
+    score_precision = torch.cat((score_precision_0_12, score_precision_2))
+    score_acc = torch.cat((score_acc_0_12, score_acc_2))
 
     return [score_jaccard, score_f1, score_recall, score_precision, score_acc]
+
+
+def mask_parse(mask):
+    mask = np.expand_dims(mask, axis=-1)                # (512, 512, 1)
+    mask = np.concatenate([mask, mask, mask], axis=-1)  # (512, 512, 3)
+    return mask
 

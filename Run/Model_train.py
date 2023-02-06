@@ -5,10 +5,13 @@ from torch.utils.data import DataLoader
 from data import train_test_split
 from UNet_model import build_unet
 from monai.losses import DiceCELoss
-from monai.losses import DiceLoss
 from utils import seeding, train_time
 import torch
 from monai.networks.nets import SwinUNETR
+import argparse
+from torch.utils.tensorboard import SummaryWriter
+from torchmetrics.functional.classification import multiclass_f1_score
+
 model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
                     depths=(2, 2, 2, 2),
                     num_heads=(3, 6, 12, 24),
@@ -21,7 +24,7 @@ model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
                     use_checkpoint=False,
                     spatial_dims=2,
                     downsample='merging')
-import argparse
+
 parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
@@ -37,11 +40,7 @@ elif model_name == 'sur':
     model = model_su
     model_text = 'swin_unetr'
 
-from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
-
-
-'''Initialisation'''
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 
 
@@ -67,18 +66,19 @@ def evaluate(model, data, loss_fn, device):
         for x, y in data:
             x = x.to(device, dtype=torch.float32)
             y = y.to(device)
-            y_12_comb = torch.where(y == 2, 1, y)   # prepare for disc
-            y_pred = model(x)
-            loss = loss_fn(y_pred, y).squeeze().sum(dim=0)
-            l_12 = loss_fn(y_pred, y_12_comb).squeeze().sum(dim=0)[1].item()
+            y_12_comb = torch.where(y == 2, 1, y)           # prepare for disc
+
+            y_pred = model(x).softmax(dim=1).argmax(dim=1)
+            y_12_comb_pred = torch.where(y_pred == 2, 1, y_pred)
+            loss = loss_fn(y_pred, y, num_classes=3, average=None)  # return f1, f1_loss_fn requires both in un_one_hot form
+            l12 = loss_fn(y_12_comb_pred, y_12_comb, dim=2, ignore_dim=0)[1].item()
             l_0, l_1, l_2 = loss[0].item(), loss[1].item(), loss[2].item()
             val_loss = l_1/2 + l_2/2
-        val_loss = val_loss/len(data)
-        l1 = l_1/len(data)
-        l2 = l_2/len(data)
-        l0 = l_0/len(data)
-        l12 = l_12/len(data)
-        print( l0, l1, l2, l12, val_loss)
+        # val_loss = val_loss/len(data)
+        # l1 = l_1/len(data)
+        # l2 = l_2/len(data)
+        # l0 = l_0/len(data)
+        # l12 = l_12/len(data)
     return  l0, l1, l2, l12, val_loss
 
 if __name__ == "__main__":
@@ -89,24 +89,19 @@ if __name__ == "__main__":
     train_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/train/mask/*"))
     valid_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/image/*"))
     valid_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/mask/*"))
-    '''check size of datasets'''
-    data_str = f"Dataset Size:\nTrain: {len(train_x)} - Valid: {len(valid_x)}\n"
-    print(data_str)
-
-    """ Hyperparameters """
-    lr1 = lr
-    H = 512
-    W = 512
-    size = (H, W)
-    iteration = 2000 #change
-    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth', 'x')
+    f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth','x')
     f.close()
     f = open(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth', 'x')
     f.close()
     checkpoint_path = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth'
     checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth'
+    data_str = f"Dataset Size:\nTrain: {len(train_x)} - Valid: {len(valid_x)}\n"
+    print(data_str)
 
-    """ Dataset and loader """
+    """ Hyperparameters """
+    lr1 = lr
+    iteration = 2000
+
     train_dataset = train_test_split(train_x, train_y)
     valid_dataset = train_test_split(valid_x, valid_y)
 
@@ -129,7 +124,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
     train_loss_fn = DiceCELoss(include_background=False, softmax=True, lambda_dice=0.5, lambda_ce=0.5, to_onehot_y=True)
-    eval_loss_fn  = DiceLoss(reduction='none', softmax=True, include_background=True, to_onehot_y=True)
+    eval_loss_fn  = multiclass_f1_score
 
     """ Training the model """
     best_valid_loss = float("inf")
@@ -140,10 +135,10 @@ if __name__ == "__main__":
         l_0, l_1, l_2, l_12, valid_loss = evaluate(model, valid_loader, eval_loss_fn, device)
 
         writer.add_scalar(f'Training Loss', train_loss, iteration_n)
-        writer.add_scalar(f'Validation Background DICE', 1 - l_0, iteration_n)
-        writer.add_scalar(f'Validation Cup DICE', 1 - l_1, iteration_n)
-        writer.add_scalar(f'Validation outer ring DICE', 1 - l_2, iteration_n)
-        writer.add_scalar(f'Validation Disc DICE', 1 - l_12 , iteration_n)
+        writer.add_scalar(f'Validation Background DICE', l_0, iteration_n)
+        writer.add_scalar(f'Validation Cup DICE', l_1, iteration_n)
+        writer.add_scalar(f'Validation outer ring DICE', l_2, iteration_n)
+        writer.add_scalar(f'Validation Disc DICE', l_12 , iteration_n)
 
         '''updating the learning rate'''
         # if iteration_n+1 == 1000:
@@ -157,6 +152,8 @@ if __name__ == "__main__":
             print(data_str)
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), checkpoint_path)
+
+        writer.add_scalar('Best valid loss', best_valid_loss , iteration_n)
 
         if iteration_n+1 == iteration:
             torch.save(model.state_dict(), checkpoint_path_final)
