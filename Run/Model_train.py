@@ -43,7 +43,6 @@ elif model_name == 'sur':
 writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 
-
 def train(model, data, optimizer, loss_fn, device):
     iteration_loss = 0.0
     model.train()
@@ -64,22 +63,21 @@ def evaluate(model, data, loss_fn, device):
     model.eval()
     with torch.no_grad():
         for x, y in data:
+            print(len(data))
             x = x.to(device, dtype=torch.float32)
             y = y.to(device)
             y_12_comb = torch.where(y == 2, 1, y)           # prepare for disc
 
-            y_pred = model(x).softmax(dim=1).argmax(dim=1)
+            y_pred = model(x).softmax(dim=1).argmax(dim=1).unsqueeze(dim=1)
             y_12_comb_pred = torch.where(y_pred == 2, 1, y_pred)
+
             loss = loss_fn(y_pred, y, num_classes=3, average=None)  # return f1, f1_loss_fn requires both in un_one_hot form
-            l12 = loss_fn(y_12_comb_pred, y_12_comb, dim=2, ignore_dim=0)[1].item()
+            l12 = loss_fn(y_12_comb_pred, y_12_comb, num_classes=2, average=None,ignore_index=0)[1].item()
+
             l_0, l_1, l_2 = loss[0].item(), loss[1].item(), loss[2].item()
             val_loss = l_1/2 + l_2/2
-        # val_loss = val_loss/len(data)
-        # l1 = l_1/len(data)
-        # l2 = l_2/len(data)
-        # l0 = l_0/len(data)
-        # l12 = l_12/len(data)
-    return  l0, l1, l2, l12, val_loss
+            print(l_0, l_1, l_2, l12, val_loss)
+    return  l_0, l_1, l_2, l12, val_loss
 
 if __name__ == "__main__":
     """ Seeding """
