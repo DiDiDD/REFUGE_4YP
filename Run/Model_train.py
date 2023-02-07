@@ -59,9 +59,9 @@ def train(model, data, optimizer, loss_fn, device):
     iteration_loss = iteration_loss/len(data)
     return iteration_loss
 
-def evaluate(model, data, loss_fn, device):
+def evaluate(model, data, score_fn, device):
     model.eval()
-    val_loss, l0, l1, l2, l12 = 0.0, 0.0, 0.0, 0.0, 0.0
+    val_score, s0, s1, s2, s12 = 0.0, 0.0, 0.0, 0.0, 0.0
     with torch.no_grad():
         for x, y in data:
             x = x.to(device, dtype=torch.float32)
@@ -71,16 +71,16 @@ def evaluate(model, data, loss_fn, device):
             y_pred = model(x).softmax(dim=1).argmax(dim=1).unsqueeze(dim=1)
             y_12_comb_pred = torch.where(y_pred == 2, 1, y_pred)
 
-            loss = loss_fn(y_pred, y, num_classes=3, average=None)  # return f1, f1_loss_fn requires both in un_one_hot form
-            l_12 = loss_fn(y_12_comb_pred, y_12_comb, num_classes=2, average=None,ignore_index=0)[1].item()
+            score = score_fn(y_pred, y, num_classes=3, average=None)  # return f1, f1_loss_fn requires both in un_one_hot form
+            s_12 = score_fn(y_12_comb_pred, y_12_comb, num_classes=2, average=None,ignore_index=0)[1].item()
 
-            l_0, l_1, l_2 = loss[0].item(), loss[1].item(), loss[2].item()
-            l0 += l_0
-            l1 += l_1
-            l2 += l_2
-            l12 += l_12
-        val_loss += l1/2 + l2/2
-    return  l_0/len(data), l1/len(data), l_2/len(data), l12/len(data), val_loss/len(data)
+            s_0, s_1, s_2 = score[0].item(), score[1].item(), score[2].item()
+            s0 += s_0
+            s1 += s_1
+            s2 += s_2
+            s12 += s_12
+        val_score += s1/2 + s2/2
+    return  s_0/len(data), s1/len(data), s2/len(data), s12/len(data), val_score/len(data)
 
 if __name__ == "__main__":
     """ Seeding """
@@ -128,18 +128,18 @@ if __name__ == "__main__":
     eval_loss_fn  = multiclass_f1_score
 
     """ Training the model """
-    best_valid_loss = float("inf")
+    best_valid_score = 0.0
 
     for iteration_n in tqdm(range(iteration)):
         start_time = time.time()
         train_loss = train(model, train_loader, optimizer, train_loss_fn, device)
-        l_0, l_1, l_2, l_12, valid_loss = evaluate(model, valid_loader, eval_loss_fn, device)
+        s0, s1, s2, s12, valid_score = evaluate(model, valid_loader, eval_loss_fn, device)
 
         writer.add_scalar(f'Training Loss', train_loss, iteration_n)
-        writer.add_scalar(f'Validation Background F1', l_0, iteration_n)
-        writer.add_scalar(f'Validation Cup F1', l_1, iteration_n)
-        writer.add_scalar(f'Validation outer ring F1', l_2, iteration_n)
-        writer.add_scalar(f'Validation Disc F1', l_12 , iteration_n)
+        writer.add_scalar(f'Validation Background F1', s0, iteration_n)
+        writer.add_scalar(f'Validation Cup F1', s1, iteration_n)
+        writer.add_scalar(f'Validation outer ring F1', s2, iteration_n)
+        writer.add_scalar(f'Validation Disc F1', s12 , iteration_n)
 
         '''updating the learning rate'''
         # if iteration_n+1 == 1000:
@@ -148,13 +148,13 @@ if __name__ == "__main__":
         #     lr1 = 5e-5
 
         """ Saving the model """
-        if valid_loss < best_valid_loss:
-            data_str = f"Valid loss improved from {best_valid_loss:2.6f} to {valid_loss:2.6f}. Saving checkpoint: {checkpoint_path}"
+        if valid_score > best_valid_score:
+            data_str = f"Valid score improved from {best_valid_score:2.6f} to {valid_score:2.6f}. Saving checkpoint: {checkpoint_path}"
             print(data_str)
-            best_valid_loss = valid_loss
+            best_valid_score = valid_score
             torch.save(model.state_dict(), checkpoint_path)
 
-        writer.add_scalar('Best valid loss', best_valid_loss , iteration_n)
+        writer.add_scalar('Best valid loss', best_valid_score , iteration_n)
 
         if iteration_n+1 == iteration:
             torch.save(model.state_dict(), checkpoint_path_final)
@@ -164,5 +164,5 @@ if __name__ == "__main__":
 
         data_str = f'Iteration: {iteration_n+1:02} | Iteration Time: {iteration_mins}min {iteration_secs}s\n'
         data_str += f'\tTrain Loss: {train_loss:.6f}\n'
-        data_str += f'\t Val. Loss: {valid_loss:.6f}\n'
+        data_str += f'\t Val Score: {valid_score:.6f}\n'
         print(data_str)
