@@ -91,7 +91,3 @@ class build_unet(nn.Module):
         outputs = self.outputs(d4)
 
         return outputs
-
-x = torch.rand(400,3,512,512)
-y = build_unet()(x)
-print('finished')

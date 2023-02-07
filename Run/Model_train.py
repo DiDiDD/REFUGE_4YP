@@ -12,7 +12,7 @@ import argparse
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.functional.classification import multiclass_f1_score
 
-model_su = SwinUNETR(img_size = (512, 512), in_channels = 3 , out_channels = 3,
+model_su = SwinUNETR(img_size = (512, 512), in_channels=3 , out_channels=3,
                     depths=(2, 2, 2, 2),
                     num_heads=(3, 6, 12, 24),
                     feature_size=24,
@@ -29,14 +29,14 @@ parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
-parser.add_argument('model', metavar='model', type=str, choices = ['unet', 'sur'], help='Specify a model')
+parser.add_argument('model', metavar='model', type=str, choices = ['unet', 'swin_unetr'], help='Specify a model')
 args = parser.parse_args()
 lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
 '''select between two model'''
 if model_name == 'unet':
     model = build_unet()
     model_text = 'UNET'
-elif model_name == 'sur':
+elif model_name == 'swin_unetr':
     model = model_su
     model_text = 'swin_unetr'
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     valid_loader = DataLoader(
         dataset=valid_dataset,
-        batch_size=400,
+        batch_size=1,
         shuffle=False,
         num_workers=4
     )
