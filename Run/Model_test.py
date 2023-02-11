@@ -38,7 +38,7 @@ model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
 if model_name == 'unet':
     model = build_unet()
     model_text = 'UNET'
-elif model_name == 'swin_uetr':
+elif model_name == 'swin_unetr':
     model = model_su
     model_text = 'swin_unetr'
 # elif model_name == 'utnet':
