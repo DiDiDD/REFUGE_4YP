@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from data import train_test_split
 from UNet_model import build_unet
 from monai.losses import DiceCELoss
-from utils import seeding, train_time
+from utils import seeding, train_time, create_dir
 import torch
 from monai.networks.nets import SwinUNETR
 import argparse
@@ -14,8 +14,8 @@ from torchmetrics.functional.classification import multiclass_f1_score
 
 model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=(2, 2, 2, 2),
-                    num_heads=(3, 6, 12, 18),
-                    feature_size=16,
+                    num_heads=(3, 6, 12, 24),
+                    feature_size=12,
                     norm_name='instance',
                     drop_rate=0.0,
                     attn_drop_rate=0.0,
@@ -41,6 +41,7 @@ elif model_name == 'swin_unetr':
 
 writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
+create_dir(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}')
 
 def train(model, data, optimizer, loss_fn, device):
     iteration_loss = 0.0
