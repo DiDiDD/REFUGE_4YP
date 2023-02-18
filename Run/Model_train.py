@@ -12,11 +12,11 @@ import argparse
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.functional.classification import multiclass_f1_score
 
-model_su = SwinUNETR(img_size = (512, 512), in_channels=3 , out_channels=3,
+model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=(2, 2, 2, 2),
-                    num_heads=(3, 6, 12, 24),
-                    feature_size=24,
-                    norm_name='batch',
+                    num_heads=(3, 6, 12, 18),
+                    feature_size=16,
+                    norm_name='instance',
                     drop_rate=0.0,
                     attn_drop_rate=0.0,
                     dropout_path_rate=0.0,
@@ -30,15 +30,14 @@ parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate'
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
 parser.add_argument('model', metavar='model', type=str, choices = ['unet', 'swin_unetr'], help='Specify a model')
+parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
 args = parser.parse_args()
-lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
+lr, batch_size, gpu_index, model_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.model_text
 '''select between two model'''
 if model_name == 'unet':
     model = build_unet()
-    model_text = 'UNET'
 elif model_name == 'swin_unetr':
     model = model_su
-    model_text = 'swin_unetr'
 
 writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/', comment= f'UNET_lr_{lr}_bs_{batch_size}')
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
@@ -101,7 +100,7 @@ if __name__ == "__main__":
 
     """ Hyperparameters """
     lr1 = lr
-    iteration = 2000
+    iteration = 1500
 
     train_dataset = train_test_split(train_x, train_y)
     valid_dataset = train_test_split(valid_x, valid_y)

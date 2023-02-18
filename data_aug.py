@@ -6,8 +6,6 @@ from tqdm import tqdm
 from albumentations import HorizontalFlip, VerticalFlip, Rotate
 
 
-""" Create a directory """
-
 
 def create_dir(path):
     if not os.path.exists(path):
