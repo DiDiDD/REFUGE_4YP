@@ -33,33 +33,40 @@ def train_time(start_time, end_time):
     return elapsed_mins, elapsed_secs
 
 
-def calculate_metrics(y_pred, y_true):
-    score_jaccard_2 = multiclass_jaccard_index(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)    # tensor size==0, so we need to unsqueeze
-    score_f1_2 = multiclass_f1_score(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
-    score_precision_2 = multiclass_precision(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
-    score_recall_2 = multiclass_recall(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
-    score_acc_2 = multiclass_accuracy(y_pred, y_true, num_classes=3, average=None)[2].unsqueeze(0)
+def segmentation_score(y_true, y_pred, num_classes):
+    # returns confusion matrix (TP, FP, TN, FN) for each class, plus a combined class for class 1+2 (disc)
+    smooth = 0.00001
+    y_true = y_true.cpu().numpy().astype(int)
+    y_pred = y_pred.cpu().numpy().astype(int)
+    score_matrix = np.zeros((num_classes + 1, 5))
 
-    y_pred_trans = torch.where(y_pred == 2, 1, y_pred)
-    y_true_trans = torch.where(y_true == 2, 1, y_true)
+    for i in range(num_classes):
+        tp = np.sum(np.logical_and(y_true == i, y_pred == i))
+        fp = np.sum(np.logical_and(y_true != i, y_pred == i))
+        tn = np.sum(np.logical_and(y_true != i, y_pred != i))
+        fn = np.sum(np.logical_and(y_true == i, y_pred != i))
+        accuracy = (tp + tn)/(tp+fp+tn+fn+smooth)
+        precision = tp/(tp+fp+smooth)
+        recall = tp/(tp+fn+smooth)
+        f1 = 2*tp/(2*tp+fp+fn+smooth)
+        IoU = tp/(tp+fp+fn+smooth)
+        score_matrix[i] = np.array([IoU, f1, recall, precision, accuracy])
+    # DISC
+    tp = np.sum(np.logical_and(np.logical_or(y_true == 1, y_true == 2), np.logical_or(y_pred == 1, y_pred == 2)))
+    fp = np.sum(np.logical_and(y_true == 0, np.logical_or(y_pred == 1, y_pred == 2)))
+    tn = np.sum(np.logical_and(y_true == 0, y_pred == 0))
+    fn = np.sum(np.logical_and(np.logical_or(y_true == 1, y_true == 2), y_pred == 0))
+    accuracy = (tp + tn) / (tp + fp + tn + fn + smooth)
+    precision = tp / (tp + fp + smooth)
+    recall = tp / (tp + fn + smooth)
+    f1 = 2 * tp / (2 * tp + fp + fn + smooth)
+    IoU = tp / (tp + fp + fn + smooth)
+    score_matrix[3] = np.array([IoU, f1, recall, precision, accuracy])
 
-    score_jaccard_0_12 = multiclass_jaccard_index(y_pred_trans, y_true_trans, num_classes=2, average=None)
-    score_f1_0_12 = multiclass_f1_score(y_pred_trans, y_true_trans, num_classes=2, average=None)
-    score_precision_0_12 = multiclass_precision(y_pred_trans, y_true_trans, num_classes=2, average=None)
-    score_recall_0_12 = multiclass_recall(y_pred_trans, y_true_trans, num_classes=2, average=None)
-    score_acc_0_12 = multiclass_accuracy(y_pred_trans, y_true_trans, num_classes=2, average=None)
-
-    score_jaccard = torch.cat((score_jaccard_0_12, score_jaccard_2))
-    score_f1 = torch.cat((score_f1_0_12, score_f1_2))
-    score_recall = torch.cat((score_recall_0_12, score_recall_2))
-    score_precision = torch.cat((score_precision_0_12, score_precision_2))
-    score_acc = torch.cat((score_acc_0_12, score_acc_2))
-
-    return [score_jaccard, score_f1, score_recall, score_precision, score_acc]
+    return score_matrix
 
 
 def mask_parse(mask):
     mask = np.expand_dims(mask, axis=-1)                # (512, 512, 1)
     mask = np.concatenate([mask, mask, mask], axis=-1)  # (512, 512, 3)
     return mask
-

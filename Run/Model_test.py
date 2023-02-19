@@ -7,7 +7,7 @@ from tqdm import tqdm
 import torch
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
-from utils import create_dir, seeding, calculate_metrics, mask_parse
+from utils import create_dir, seeding, segmentation_score, mask_parse
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 
@@ -65,9 +65,7 @@ if __name__ == "__main__":
     model.to(device)
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
-
-    metrics_score = [0.0, 0.0, 0.0, 0.0, 0.0]
-
+    metrics_score = np.zeros(dataset_size,4,5)
     for i in tqdm(range(dataset_size)):
         with torch.no_grad():
             '''Prediction'''
@@ -76,8 +74,8 @@ if __name__ == "__main__":
             pred_y = model(image).squeeze(0)  # (3, 512, 512)
             pred_y = torch.softmax(pred_y, dim=0)  # (3, 512, 512)
             pred_mask = torch.argmax(pred_y, dim=0).type(torch.int64)  # (512, 512)
-            score = calculate_metrics(pred_mask, ori_mask)
-            metrics_score = list(map(add, metrics_score, score))
+            score = segmentation_score(ori_mask, pred_mask)
+            metrics_score += score
             pred_mask = pred_mask.cpu().numpy()  # (512, 512)
             ori_mask = ori_mask.cpu().numpy()
 
@@ -87,32 +85,18 @@ if __name__ == "__main__":
             ori_mask = np.where(ori_mask == 2, 255, ori_mask)
             ori_mask = np.where(ori_mask == 1, 128, ori_mask)
             image = image * 127.5 + 127.5
-            """ Saving masks """
+
             ori_mask, pred_mask = mask_parse(ori_mask), mask_parse(pred_mask)
             line = np.ones((512, 20, 3)) * 255  # white line
             '''Create image for us to analyse visually '''
-            cat_images = np.concatenate(
-                [image.squeeze().permute(1, 2, 0).cpu().numpy(), line, ori_mask, line, pred_mask], axis=1)
-            cv2.imwrite(
-                f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/results/{i}.png",
-                cat_images)
+            cat_images = np.concatenate([image.squeeze().permute(1, 2, 0).cpu().numpy(), line, ori_mask, line, pred_mask], axis=1)
+            cv2.imwrite(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/results/{i}.png", cat_images)
 
-    jaccard = metrics_score[0] / len(test_x)
-    f1 = metrics_score[1] / len(test_x)
-    recall = metrics_score[2] / len(test_x)
-    precision = metrics_score[3] / len(test_x)
-    acc = metrics_score[4] / len(test_x)
-
-    # make the score like: score +- S.D.
-
-    for x in range(len(jaccard)):
-        writer.add_scalar(f'Jaccard Score', jaccard[x], x)
-        writer.add_scalar(f'F1 Score', f1[x], x)
-        writer.add_scalar(f'Recall Score', recall[x], x)
-        writer.add_scalar(f'Precision Score', precision[x], x)
-        writer.add_scalar(f'Accuracy Score', acc[x], x)
-        print('Jaccard Score', jaccard[x], x)
-        print('F1 Score', f1[x], x)
-        print('Recall Score', recall[x], x)
-        print('Precision Score', precision[x], x)
-        print('Accuracy Score', acc[x], x)
+    np.save(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/test_score", metrics_score)
+    f1_record = metrics_score[:,:,1]
+    f1_std = np.std(f1_record, axis=0)
+    f1_report_str = f'Background F1 score is {f1_record[0]} +- {f1_std[0]}'
+    f1_report_str += f'\nOuter Ring F1 score is {f1_record[1]} +- {f1_std[1]}'
+    f1_report_str += f'\nCup F1 score is {f1_record[2]} +- {f1_std[2]}'
+    f1_report_str += f'\nDisc F1 score is {f1_record[3]} +- {f1_std[3]}'
+    print(f1_report_str)
