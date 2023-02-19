@@ -19,6 +19,13 @@ def create_dir(path):
         os.makedirs(path)
 
 
+def create_file(file):
+    if not os.path.exists(file):
+        open("file", "w")
+    else:
+        print(f"file Exists")
+
+
 def train_time(start_time, end_time):
     elapsed_time = end_time - start_time
     elapsed_mins = int(elapsed_time / 60)
