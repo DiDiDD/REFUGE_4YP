@@ -53,8 +53,7 @@ def train(model, data, optimizer, loss_fn, device):
         y = y.to(device, dtype=torch.float32)
         optimizer.zero_grad()
         y_pred = model(x)
-        loss = loss_fn(y_pred, y, include_background=False, softmax=True, to_onehot_y=True,
-                       lambda_dice=0.5, lambda_ce=0.5, )
+        loss = loss_fn(y_pred, y)
         loss.backward()
         optimizer.step()
         iteration_loss += loss.item()
@@ -72,7 +71,7 @@ def evaluate(model, data, score_fn, device):
             y = y.to(device)
             y_pred = model(x).softmax(dim=1).argmax(dim=1).unsqueeze(dim=1)
             score = score_fn(y, y_pred)
-            val_score = val_score + score[1].item + score[2].item()
+            val_score = val_score + score[1].item()/2 + score[2].item()/2
             f1_score_record += score
 
     f1_score_record = f1_score_record/len(data)
@@ -103,8 +102,8 @@ if __name__ == "__main__":
     iteration = 2000
     optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
-    train_loss_fn = DiceCELoss
-    eval_loss_fn = f1_valid_score()
+    train_loss_fn = DiceCELoss(include_background=False, softmax=True, to_onehot_y=True, lambda_dice=0.5, lambda_ce=0.5)
+    eval_loss_fn = f1_valid_score
 
     """ Training the model """
     best_valid_score = 0.0
