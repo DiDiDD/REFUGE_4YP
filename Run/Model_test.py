@@ -1,4 +1,3 @@
-from operator import add
 from data import train_test_split
 import numpy as np
 from glob import glob
@@ -7,7 +6,7 @@ from tqdm import tqdm
 import torch
 from UNet_model import build_unet
 from monai.networks.nets import SwinUNETR
-from utils import create_dir, seeding, segmentation_score, mask_parse
+from utils import create_dir, segmentation_score, mask_parse
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 

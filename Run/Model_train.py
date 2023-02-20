@@ -1,16 +1,16 @@
 import time
+import numpy as np
 from glob import glob
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from data import train_test_split
 from UNet_model import build_unet
 from monai.losses import DiceCELoss
-from utils import seeding, train_time, create_dir, create_file
+from utils import seeding, train_time, create_dir, create_file, f1_valid_score
 import torch
 from monai.networks.nets import SwinUNETR
 import argparse
 from torch.utils.tensorboard import SummaryWriter
-from torchmetrics.functional.classification import multiclass_f1_score
 
 model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=(2, 2, 2, 2),
@@ -64,26 +64,20 @@ def train(model, data, optimizer, loss_fn, device):
 
 def evaluate(model, data, score_fn, device):
     model.eval()
-    val_score, s0, s1, s2, s12 = 0.0, 0.0, 0.0, 0.0, 0.0
+    val_score= 0
+    f1_score_record = np.zeros(4)
     with torch.no_grad():
-        for x, y, z in data:
+        for x, y in data:
             x = x.to(device, dtype=torch.float32)
             y = y.to(device)
-            mask_disc = z.to(device)           # prepare for disc
-
             y_pred = model(x).softmax(dim=1).argmax(dim=1).unsqueeze(dim=1)
-            y_12_comb_pred = torch.where(y_pred == 2, 1, y_pred)
+            score = score_fn(y, y_pred)
+            val_score = val_score + score[1].item + score[2].item()
+            f1_score_record += score
 
-            score = score_fn(y_pred, y, num_classes=3, average=None)  # return f1, f1_loss_fn requires both in un_one_hot form
-            s_12 = score_fn(y_12_comb_pred, mask_disc, num_classes=2, average=None, ignore_index=0)[1].item()
-
-            s_0, s_1, s_2 = score[0].item(), score[1].item(), score[2].item()
-            s0 += s_0
-            s1 += s_1
-            s2 += s_2
-            s12 += s_12
-        val_score += s1/2 + s2/2
-    return  s_0/len(data), s1/len(data), s2/len(data), s12/len(data), val_score/len(data)
+    f1_score_record = f1_score_record/len(data)
+    val_score = val_score/len(data)
+    return f1_score_record[0].item(), f1_score_record[1].item(), f1_score_record[2].item(), f1_score_record[3].item(), val_score
 
 
 if __name__ == "__main__":
@@ -110,7 +104,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
     train_loss_fn = DiceCELoss
-    eval_loss_fn = multiclass_f1_score
+    eval_loss_fn = f1_valid_score()
 
     """ Training the model """
     best_valid_score = 0.0
@@ -118,13 +112,13 @@ if __name__ == "__main__":
     for iteration_n in tqdm(range(iteration)):
         start_time = time.time()
         train_loss = train(model, train_loader, optimizer, train_loss_fn, device)
-        s0, s1, s2, s12, valid_score = evaluate(model, valid_loader, eval_loss_fn, device)
+        s_bg, s_outer, s_cup, s_disc, valid_score = evaluate(model, valid_loader, eval_loss_fn, device)
 
         writer.add_scalar(f'Training Loss', train_loss, iteration_n)
-        writer.add_scalar(f'Validation Background F1', s0, iteration_n)
-        writer.add_scalar(f'Validation Outer Ring F1', s1, iteration_n)
-        writer.add_scalar(f'Validation Cup F1', s2, iteration_n)
-        writer.add_scalar(f'Validation Disc F1', s12 , iteration_n)
+        writer.add_scalar(f'Validation Background F1', s_bg, iteration_n)
+        writer.add_scalar(f'Validation Outer Ring F1', s_outer, iteration_n)
+        writer.add_scalar(f'Validation Cup F1', s_cup, iteration_n)
+        writer.add_scalar(f'Validation Disc F1', s_disc , iteration_n)
 
         '''updating the learning rate'''
         # if iteration_n+1 == 1000:

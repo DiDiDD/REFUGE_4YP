@@ -12,7 +12,7 @@ class train_test_split(Dataset):
         self.num_samples = len(images_path)
         self.get_disc = get_disc
 
-    def __getitem__(self, index, get_disc=False):
+    def __getitem__(self, index):
         image = cv2.imread(self.images_path[index], cv2.IMREAD_COLOR)
         '''Normalise tensity in range [-1,-1]'''
         image = (image-127.5)/127.5
@@ -29,9 +29,7 @@ class train_test_split(Dataset):
         mask = np.expand_dims(mask, axis=0)
         mask = torch.from_numpy(mask)        # (1,512,512)
 
-        if get_disc == True:
-            mask_disc = torch.where(mask == 2, 1, mask)
-        return image, mask, mask_disc
+        return image, mask
 
     def __len__(self):
         return self.num_samples

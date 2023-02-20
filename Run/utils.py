@@ -2,8 +2,6 @@ import os
 import random
 import numpy as np
 import torch
-from torchmetrics.functional.classification import multiclass_jaccard_index, multiclass_f1_score, multiclass_precision, multiclass_recall, multiclass_accuracy
-
 
 def seeding(seed):  # seeding the randomness
     random.seed(seed)
@@ -62,6 +60,27 @@ def segmentation_score(y_true, y_pred, num_classes):
     f1 = 2 * tp / (2 * tp + fp + fn + smooth)
     IoU = tp / (tp + fp + fn + smooth)
     score_matrix[3] = np.array([IoU, f1, recall, precision, accuracy])
+
+    return score_matrix
+
+
+def f1_valid_score(y_true, y_pred):
+    smooth = 0.00001
+    y_true = y_true.cpu().numpy().astype(int)
+    y_pred = y_pred.cpu().numpy().astype(int)
+    score_matrix = np.zeros(4)
+    for i in range(3):
+        tp = np.sum(np.logical_and(y_true == i, y_pred == i))
+        fp = np.sum(np.logical_and(y_true != i, y_pred == i))
+        tn = np.sum(np.logical_and(y_true != i, y_pred != i))
+        fn = np.sum(np.logical_and(y_true == i, y_pred != i))
+        f1 = 2*tp/(2*tp+fp+fn+smooth)
+        score_matrix[i] = f1
+    tp = np.sum(np.logical_and(np.logical_or(y_true == 1, y_true == 2), np.logical_or(y_pred == 1, y_pred == 2)))
+    fp = np.sum(np.logical_and(y_true == 0, np.logical_or(y_pred == 1, y_pred == 2)))
+    fn = np.sum(np.logical_and(np.logical_or(y_true == 1, y_true == 2), y_pred == 0))
+    f1 = 2 * tp / (2 * tp + fp + fn + smooth)
+    score_matrix[3] = f1
 
     return score_matrix
 
