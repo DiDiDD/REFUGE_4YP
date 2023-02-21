@@ -33,6 +33,9 @@ def train_time(start_time, end_time):
 
 def segmentation_score(y_true, y_pred, num_classes):
     # returns confusion matrix (TP, FP, TN, FN) for each class, plus a combined class for class 1+2 (disc)
+    if y_true.size() != y_pred.szie():
+        raise DimensionError(f'Check dimensions of y_true {y_true.size()} and y_pred {y_pred.szie()}')
+
     smooth = 0.00001
     y_true = y_true.cpu().numpy().astype(int)
     y_pred = y_pred.cpu().numpy().astype(int)
@@ -65,6 +68,9 @@ def segmentation_score(y_true, y_pred, num_classes):
 
 
 def f1_valid_score(y_true, y_pred):
+    if y_true.size() != y_pred.szie():
+        raise DimensionError(f'Check dimensions of y_true {y_true.size()} and y_pred {y_pred.szie()}')
+
     smooth = 0.00001
     y_true = y_true.cpu().numpy().astype(int)
     y_pred = y_pred.cpu().numpy().astype(int)
@@ -72,7 +78,6 @@ def f1_valid_score(y_true, y_pred):
     for i in range(3):
         tp = np.sum(np.logical_and(y_true == i, y_pred == i))
         fp = np.sum(np.logical_and(y_true != i, y_pred == i))
-        tn = np.sum(np.logical_and(y_true != i, y_pred != i))
         fn = np.sum(np.logical_and(y_true == i, y_pred != i))
         f1 = 2*tp/(2*tp+fp+fn+smooth)
         score_matrix[i] = f1

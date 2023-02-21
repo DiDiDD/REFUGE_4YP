@@ -23,7 +23,7 @@ class train_test_split(Dataset):
         """ Reading mask """
         mask = cv2.imread(self.masks_path[index], cv2.IMREAD_GRAYSCALE)
         mask = np.where(mask < 128, 2, mask)     # cup
-        mask = np.where(mask == 128, 1, mask)    # disc - cup = outer - ring
+        mask = np.where(mask == 128, 1, mask)    # disc - cup = outer ring
         mask = np.where(mask > 128, 0, mask)     # background
         mask = mask.astype(np.int64)
         mask = np.expand_dims(mask, axis=0)
