@@ -117,7 +117,7 @@ if __name__ == "__main__":
         writer.add_scalar(f'Validation Background F1', s_bg, iteration_n)
         writer.add_scalar(f'Validation Outer Ring F1', s_outer, iteration_n)
         writer.add_scalar(f'Validation Cup F1', s_cup, iteration_n)
-        writer.add_scalar(f'Validation Disc F1', s_disc , iteration_n)
+        writer.add_scalar(f'Validation Disc F1', s_disc, iteration_n)
         writer.add_scalar(f'Validation Score', valid_score, iteration_n)
 
         '''updating the learning rate'''
