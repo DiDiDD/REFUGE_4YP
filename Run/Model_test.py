@@ -94,8 +94,12 @@ if __name__ == "__main__":
     np.save(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/test_score", metrics_score)
     f1_record = metrics_score[:,:,1]
     f1_std = np.std(f1_record, axis=0)
-    f1_report_str = f'Background F1 score is {f1_record[0]} +- {f1_std[0]}'
+    f1_report_str = f'1600_{model_text}_lr_{lr}_bs_{batch_size} test results are:'
+    f1_report_str += f'\nBackground F1 score is {f1_record[0]} +- {f1_std[0]}'
     f1_report_str += f'\nOuter Ring F1 score is {f1_record[1]} +- {f1_std[1]}'
     f1_report_str += f'\nCup F1 score is {f1_record[2]} +- {f1_std[2]}'
     f1_report_str += f'\nDisc F1 score is {f1_record[3]} +- {f1_std[3]}'
+    writer.add_text('Test f1 score', text)
     print(f1_report_str)
+wirter.flush()
+writer.close()

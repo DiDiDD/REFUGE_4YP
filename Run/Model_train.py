@@ -143,3 +143,5 @@ if __name__ == "__main__":
         data_str += f'\tTrain Loss: {train_loss:.8f}\n'
         data_str += f'\t Val Score: {valid_score:.8f}\n'
         print(data_str)
+wirter.flush()
+writer.close()
