@@ -11,6 +11,7 @@ import torch
 from monai.networks.nets import SwinUNETR
 import argparse
 from torch.utils.tensorboard import SummaryWriter
+from UTNET_model import UTnet
 
 model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=(2, 2, 2, 2),
@@ -29,7 +30,7 @@ parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
-parser.add_argument('model', metavar='model', type=str, choices = ['unet', 'swin_unetr'], help='Specify a model')
+parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
 parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
 args = parser.parse_args()
 lr, batch_size, gpu_index, model_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.model_text
@@ -38,9 +39,11 @@ if model_name == 'unet':
     model = build_unet()
 elif model_name == 'swin_unetr':
     model = model_su
+elif model_name == 'utnet':
+    model = UTnet
 
 writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/',
-                       comment= f'UNET_lr_{lr}_bs_{batch_size}')
+                       comment=f'UNET_lr_{lr}_bs_{batch_size}')
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 create_dir(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}')
 
