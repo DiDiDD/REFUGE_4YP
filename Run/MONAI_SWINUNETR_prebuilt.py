@@ -521,7 +521,7 @@ class SwinTransformerBlock(nn.Module):
         attn_drop: float = 0.0,
         drop_path: float = 0.0,
         act_layer: str = "GELU",
-        norm_layer: Type[LayerNorm] = nn.LayerNorm,
+        co,
         use_checkpoint: bool = False,
     ) -> None:
         """
@@ -1008,13 +1008,3 @@ class SwinTransformer(nn.Module):
         x4 = self.layers4[0](x3.contiguous())
         x4_out = self.proj_out(x4, normalize)
         return [x0_out, x1_out, x2_out, x3_out, x4_out]
-
-
-# import cv2
-# import matplotlib.pyplot as plt
-#
-# im =cv2.imread('T0001_0.jpg')
-# im = cv2.resize(im,(512,512))
-# im=torch.from_numpy(im)
-# im = torch.permute(im,(-1,0,1))
-# x = SwinUNETR(im.shape,in_channels=3,out_channels=1)
