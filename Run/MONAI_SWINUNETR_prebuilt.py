@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
-from torch.nn import LayerNorm
+from torch.nn import LayerNorm, BatchNorm2d
 
 from monai.networks.blocks import MLPBlock as Mlp
 from monai.networks.blocks import PatchEmbed, UnetOutBlock, UnetrBasicBlock, UnetrUpBlock
@@ -16,7 +16,7 @@ from monai.utils import ensure_tuple_rep, look_up_option, optional_import
 rearrange, _ = optional_import("einops", name="rearrange")
 
 __all__ = [
-    "SwinUNETR",
+    "SwinUNETR2",
     "window_partition",
     "window_reverse",
     "WindowAttention",
@@ -29,7 +29,7 @@ __all__ = [
 ]
 
 
-class SwinUNETR(nn.Module):
+class SwinUNETR2(nn.Module):
     """
     Swin UNETR based on: "Hatamizadeh et al.,
     Swin UNETR: Swin Transformers for Semantic Segmentation of Brain Tumors in MRI Images
@@ -125,7 +125,7 @@ class SwinUNETR(nn.Module):
             drop_rate=drop_rate,
             attn_drop_rate=attn_drop_rate,
             drop_path_rate=dropout_path_rate,
-            norm_layer=nn.LayerNorm,
+            norm_layer=nn.BatchNorm2d,
             use_checkpoint=use_checkpoint,
             spatial_dims=spatial_dims,
             downsample=look_up_option(downsample, MERGING_MODE) if isinstance(downsample, str) else downsample,
@@ -521,7 +521,7 @@ class SwinTransformerBlock(nn.Module):
         attn_drop: float = 0.0,
         drop_path: float = 0.0,
         act_layer: str = "GELU",
-        norm_layer: Type[LayerNorm] = nn.LayerNorm,
+        norm_layer: Type[BatchNorm2d] = nn.BatchNorm2d,
         use_checkpoint: bool = False,
     ) -> None:
         """
@@ -675,7 +675,7 @@ class PatchMergingV2(nn.Module):
     https://github.com/microsoft/Swin-Transformer
     """
 
-    def __init__(self, dim: int, norm_layer: Type[LayerNorm] = nn.LayerNorm, spatial_dims: int = 3) -> None:
+    def __init__(self, dim: int, norm_layer: Type[BatchNorm2d] = nn.BatchNorm2d, spatial_dims: int = 3) -> None:
         """
         Args:
             dim: number of feature channels.
@@ -805,7 +805,7 @@ class BasicLayer(nn.Module):
         qkv_bias: bool = False,
         drop: float = 0.0,
         attn_drop: float = 0.0,
-        norm_layer: Type[LayerNorm] = nn.LayerNorm,
+        norm_layer: Type[BatchNorm2d] = nn.BatchNorm2d,
         downsample: Optional[nn.Module] = None,
         use_checkpoint: bool = False,
     ) -> None:
@@ -907,7 +907,7 @@ class SwinTransformer(nn.Module):
         drop_rate: float = 0.0,
         attn_drop_rate: float = 0.0,
         drop_path_rate: float = 0.0,
-        norm_layer: Type[LayerNorm] = nn.LayerNorm,
+        norm_layer: Type[BatchNorm2d] = nn.BatchNorm2d,
         patch_norm: bool = False,
         use_checkpoint: bool = False,
         spatial_dims: int = 3,

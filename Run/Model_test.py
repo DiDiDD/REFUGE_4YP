@@ -16,15 +16,16 @@ parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate'
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
 parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
+parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
 args = parser.parse_args()
-lr, batch_size, gpu_index, model_name = args.lr, args.b_s, args.gpu_index, args.model
+lr, batch_size, gpu_index, model_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.model_text
 
 '''swin_unetr model initialisation'''
 model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
                      depths=(2, 2, 2, 2),
                      num_heads=(3, 6, 12, 24),
-                     feature_size=24,
-                     norm_name='batch',
+                     feature_size=12,
+                     norm_name='instance',
                      drop_rate=0.0,
                      attn_drop_rate=0.0,
                      dropout_path_rate=0.0,
@@ -36,13 +37,9 @@ model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
 '''select between two model'''
 if model_name == 'unet':
     model = build_unet()
-    model_text = 'UNET'
 elif model_name == 'swin_unetr':
     model = model_su
-    model_text = 'swin_unetr'
-# elif model_name == 'utnet':
-#     model = utnet
-#     model_text = 'utnet'
+
 
 '''Tensorboard'''
 writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}',
@@ -64,7 +61,7 @@ if __name__ == "__main__":
     model.to(device)
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
-    metrics_score = np.zeros(dataset_size,4,5)
+    metrics_score = np.zeros((dataset_size,4,5))
     for i in tqdm(range(dataset_size)):
         with torch.no_grad():
             '''Prediction'''
@@ -73,8 +70,8 @@ if __name__ == "__main__":
             pred_y = model(image).squeeze(0)  # (3, 512, 512)
             pred_y = torch.softmax(pred_y, dim=0)  # (3, 512, 512)
             pred_mask = torch.argmax(pred_y, dim=0).type(torch.int64)  # (512, 512)
-            score = segmentation_score(ori_mask, pred_mask)
-            metrics_score += score
+            score = segmentation_score(ori_mask, pred_mask,num_classes=3)
+            metrics_score[i]=score
             pred_mask = pred_mask.cpu().numpy()  # (512, 512)
             ori_mask = ori_mask.cpu().numpy()
 
@@ -93,13 +90,14 @@ if __name__ == "__main__":
 
     np.save(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/test_score", metrics_score)
     f1_record = metrics_score[:,:,1]
+    f1_mean = metrics_score.mean(axis=0)
     f1_std = np.std(f1_record, axis=0)
     f1_report_str = f'1600_{model_text}_lr_{lr}_bs_{batch_size} test results are:'
-    f1_report_str += f'\nBackground F1 score is {f1_record[0]} +- {f1_std[0]}'
-    f1_report_str += f'\nOuter Ring F1 score is {f1_record[1]} +- {f1_std[1]}'
-    f1_report_str += f'\nCup F1 score is {f1_record[2]} +- {f1_std[2]}'
-    f1_report_str += f'\nDisc F1 score is {f1_record[3]} +- {f1_std[3]}'
-    writer.add_text('Test f1 score', text)
+    f1_report_str += f'\nBackground F1 score is {f1_mean[0,1]} +- {f1_std[0]}'
+    f1_report_str += f'\nOuter Ring F1 score is {f1_mean[1,1]} +- {f1_std[1]}'
+    f1_report_str += f'\nCup F1 score is {f1_mean[2,1]} +- {f1_std[2]}'
+    f1_report_str += f'\nDisc F1 score is {f1_mean[3,1]} +- {f1_std[3]}'
+    writer.add_text('Test f1 score', f1_report_str)
     print(f1_report_str)
-wirter.flush()
+writer.flush()
 writer.close()
