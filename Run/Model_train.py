@@ -11,7 +11,8 @@ import torch
 from monai.networks.nets import SwinUNETR
 import argparse
 from torch.utils.tensorboard import SummaryWriter
-from UTNET_model import UTnet
+from UTNET_model import UTNet
+from MONAI_SWINUNETR_prebuilt import SwinUNETR2
 
 model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=(2, 2, 2, 2),
@@ -25,6 +26,9 @@ model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     use_checkpoint=False,
                     spatial_dims=2,
                     downsample='merging')
+
+utnet = UTNet(in_chan=3,
+              base_chan=12)
 
 parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
@@ -40,7 +44,9 @@ if model_name == 'unet':
 elif model_name == 'swin_unetr':
     model = model_su
 elif model_name == 'utnet':
-    model = UTnet
+    model = utnet
+elif model_name == 'swin_unetr2':
+    model = model_su2
 
 writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/',
                        comment=f'UNET_lr_{lr}_bs_{batch_size}')

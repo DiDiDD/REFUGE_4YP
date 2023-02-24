@@ -2,14 +2,14 @@ import torch
 import torch.nn as nn
 
 class conv_block(nn.Module):
-    def __init__(self, in_c, out_c):
+    def __init__(self, in_c, out_c, size):
         super().__init__()
 
         self.conv1 = nn.Conv2d(in_c, out_c, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(out_c)
+        self.bn1 = nn.LayerNorm([out_c, size, size])
 
         self.conv2 = nn.Conv2d(out_c, out_c, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(out_c)
+        self.bn2 = nn.LayerNorm([out_c, size, size])
 
         self.relu = nn.ReLU()
 
@@ -25,10 +25,10 @@ class conv_block(nn.Module):
         return x
 
 class encoder_block(nn.Module):
-    def __init__(self, in_c, out_c):
+    def __init__(self, in_c, out_c, size):
         super().__init__()
 
-        self.conv = conv_block(in_c, out_c)
+        self.conv = conv_block(in_c, out_c, size)
         self.pool = nn.MaxPool2d((2, 2))
 
     def forward(self, inputs):
@@ -38,11 +38,11 @@ class encoder_block(nn.Module):
         return x, p
 
 class decoder_block(nn.Module):
-    def __init__(self, in_c, out_c):
+    def __init__(self, in_c, out_c, size):
         super().__init__()
 
         self.up = nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2, padding=0)
-        self.conv = conv_block(out_c+out_c, out_c)
+        self.conv = conv_block(out_c+out_c, out_c, size)
 
     def forward(self, inputs, skip):
         x = self.up(inputs)
@@ -55,19 +55,19 @@ class build_unet(nn.Module):
         super().__init__()
 
         """ Encoder """
-        self.e1 = encoder_block(3, 32)
-        self.e2 = encoder_block(32, 64)
-        self.e3 = encoder_block(64, 128)
-        self.e4 = encoder_block(128, 256)
+        self.e1 = encoder_block(3, 32, 512)
+        self.e2 = encoder_block(32, 64, 256)
+        self.e3 = encoder_block(64, 128, 128)
+        self.e4 = encoder_block(128, 256, 64)
 
         """ Bottleneck """
-        self.b = conv_block(256, 512)
+        self.b = conv_block(256, 512, 32)
 
         """ Decoder """
-        self.d1 = decoder_block(512, 256)
-        self.d2 = decoder_block(256, 128)
-        self.d3 = decoder_block(128, 64)
-        self.d4 = decoder_block(64, 32)
+        self.d1 = decoder_block(512, 256, 64)
+        self.d2 = decoder_block(256, 128, 128)
+        self.d3 = decoder_block(128, 64, 256)
+        self.d4 = decoder_block(64, 32, 512)
 
         """ Classifier """
         self.outputs = nn.Conv2d(32, 3, kernel_size=1, padding=0)

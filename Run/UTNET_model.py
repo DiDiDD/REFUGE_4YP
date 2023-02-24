@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
-from .conv_trans_utils import *
+from conv_trans_utils import *
 
 import pdb
 
 
 class UTNet(nn.Module):
-    def __init__(self, in_chan, base_chan, num_classes=1, reduce_size=8, block_list='234', num_blocks=[1, 2, 4],
+    def __init__(self, in_chan, base_chan, num_classes=3, reduce_size=8, block_list='234', num_blocks=[1, 2, 4],
                  projection='interp', num_heads=[2, 4, 8], attn_drop=0., proj_drop=0., bottleneck=False, maxpool=True,
                  rel_pos=True, aux_loss=False):
         super().__init__()
@@ -119,7 +119,7 @@ class UTNet(nn.Module):
 
 class UTNet_Encoderonly(nn.Module):
 
-    def __init__(self, in_chan, base_chan, num_classes=1, reduce_size=8, block_list='234', num_blocks=[1, 2, 4],
+    def __init__(self, in_chan, base_chan, num_classes=3, reduce_size=8, block_list='234', num_blocks=[1, 2, 4],
                  projection='interp', num_heads=[2, 4, 8], attn_drop=0., proj_drop=0., bottleneck=False, maxpool=True,
                  rel_pos=True, aux_loss=False):
         super().__init__()
