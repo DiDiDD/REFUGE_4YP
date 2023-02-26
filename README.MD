@@ -1,6 +1,6 @@
 # Transformer Research for Medical Image Segmentation
 
-###Command line:
+### Command line:
 python3 Model_train.py {number: learning rate} {int: batch size} {int: GPU index} {str: 'model name'} {str: 'model description'}
 eg: python3 Model_train.py 5e-5 15 1 'unet'  'unet_instNorm'
 
