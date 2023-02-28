@@ -9,6 +9,7 @@ from monai.networks.nets import SwinUNETR
 from utils import create_dir, segmentation_score, mask_parse
 import argparse
 from torch.utils.tensorboard import SummaryWriter
+from UTNET_model import UTNet
 
 '''command line initialisation '''
 parser = argparse.ArgumentParser(description='Specify Parameters')
@@ -19,7 +20,7 @@ parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_u
 parser.add_argument('norm_name', metavar='norm_name', type=str, choices=['instance', "batch", "layer"], help='Specify a normalisation method')
 parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
 args = parser.parse_args()
-lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.model_text, args.norm_name
+lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name, args.model_text,
 
 '''swin_unetr model initialisation'''
 model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
@@ -34,6 +35,9 @@ model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
                      use_checkpoint=False,
                      spatial_dims=2,
                      downsample='merging')
+
+utnet = UTNet(in_chan=3,
+              base_chan=12)
 
 '''select between two model'''
 if model_name == 'unet':
@@ -62,7 +66,7 @@ if __name__ == "__main__":
 
     """ Load the checkpoint """
     model.to(device)
-    model.load_state_dict(torch.load(checkpoint_path, map_location=device))
+    model.load_state_dict(torch.load(checkpoint_path_lowloss, map_location=device))
     model.eval()
     metrics_score = np.zeros((dataset_size,4,5))
     for i in tqdm(range(dataset_size)):

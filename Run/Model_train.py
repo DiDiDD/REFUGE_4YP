@@ -19,16 +19,16 @@ parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate'
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
 parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
-parser.add_argument('norm_name', metavar='norm_name', type=str, choices=['instance', "batch", "layer"], help='Specify a normalisation method')
+parser.add_argument('norm_name', metavar='norm_name', type=str, help='Specify a normalisation method')
 parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
 args = parser.parse_args()
-lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.model_text, args.norm_name
+lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name, args.model_text
 
 model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=(2, 2, 2, 2),
                     num_heads=(3, 6, 12, 24),
                     feature_size=12,
-                    norm_name='instance',
+                    norm_name= norm_name,
                     drop_rate=0.0,
                     attn_drop_rate=0.0,
                     dropout_path_rate=0.0,
