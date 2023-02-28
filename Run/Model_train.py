@@ -94,8 +94,8 @@ if __name__ == "__main__":
     train_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/train/mask/*"))
     valid_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/image/*"))
     valid_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/mask/*"))
-    checkpoint_path_lowloss = data_save_path + 'Checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth'
-    checkpoint_path_final = data_save_path + 'Checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth'
+    checkpoint_path_lowloss = data_save_path + f'Checkpoint/lr_{lr}_bs_{batch_size}_lowloss.pth'
+    checkpoint_path_final = data_save_path + f'Checkpoint/lr_{lr}_bs_{batch_size}_final.pth'
     create_file(checkpoint_path_lowloss)
     create_file(checkpoint_path_final)
     data_str = f"Dataset Size:\nTrain: {len(train_x)} - Valid: {len(valid_x)}\n"

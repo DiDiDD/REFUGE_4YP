@@ -89,7 +89,7 @@ if __name__ == "__main__":
             line = np.ones((512, 20, 3)) * 255  # white line
             '''Create image for us to analyse visually '''
             cat_images = np.concatenate([image.squeeze().permute(1, 2, 0).cpu().numpy(), line, ori_mask, line, pred_mask], axis=1)
-            cv2.imwrite(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/results/{i}.png", cat_images)
+            cv2.imwrite(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/results/{i}.png", cat_images)
 
     np.save(f"/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/test_score", metrics_score)
     f1_record = metrics_score[:, :, 1]
