@@ -12,7 +12,17 @@ from monai.networks.nets import SwinUNETR
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 from UTNET_model import UTNet
-from MONAI_SWINUNETR_prebuilt import SwinUNETR2
+
+
+parser = argparse.ArgumentParser(description='Specify Parameters')
+parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
+parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
+parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
+parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
+parser.add_argument('norm_name', metavar='norm_name', type=str, choices=['instance', "batch", "layer"], help='Specify a normalisation method')
+parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
+args = parser.parse_args()
+lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.model_text, args.norm_name
 
 model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=(2, 2, 2, 2),
@@ -30,14 +40,6 @@ model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
 utnet = UTNet(in_chan=3,
               base_chan=12)
 
-parser = argparse.ArgumentParser(description='Specify Parameters')
-parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
-parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
-parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
-parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
-parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
-args = parser.parse_args()
-lr, batch_size, gpu_index, model_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.model_text
 '''select between two model'''
 if model_name == 'unet':
     model = build_unet()
@@ -45,13 +47,11 @@ elif model_name == 'swin_unetr':
     model = model_su
 elif model_name == 'utnet':
     model = utnet
-elif model_name == 'swin_unetr2':
-    model = model_su2
 
-writer = SummaryWriter(f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_lr_{lr}_bs_{batch_size}/',
-                       comment=f'UNET_lr_{lr}_bs_{batch_size}')
+data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'
+writer = SummaryWriter(data_save_path)
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
-create_dir(f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}')
+create_dir(data_save_path + 'Checkpoint')
 
 
 def train(model, data, optimizer, loss_fn, device):
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     train_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/train/mask/*"))
     valid_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/image/*"))
     valid_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/val/mask/*"))
-    checkpoint_path_lowloss = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth'
-    checkpoint_path_final = f'/home/mans4021/Desktop/checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth'
+    checkpoint_path_lowloss = data_save_path + 'Checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_lowloss.pth'
+    checkpoint_path_final = data_save_path + 'Checkpoint/checkpoint_refuge_{model_text}/lr_{lr}_bs_{batch_size}_final.pth'
     create_file(checkpoint_path_lowloss)
     create_file(checkpoint_path_final)
     data_str = f"Dataset Size:\nTrain: {len(train_x)} - Valid: {len(valid_x)}\n"
