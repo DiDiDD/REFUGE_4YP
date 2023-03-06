@@ -106,6 +106,9 @@ if __name__ == "__main__":
     f1_report_str += f'\nCup F1 score is {f1_mean[2,1]:4f} +- {f1_std[2]:4f}'
     f1_report_str += f'\nDisc F1 score is {f1_mean[3,1]:4f} +- {f1_std[3]:4f}'
     writer.add_text('Test f1 score', f1_report_str)
+    for i in range(4):
+        writer.add_scaler('Test F1 score', f1_mean[i,1], i)
     print(f1_report_str)
 writer.flush()
 writer.close()
+

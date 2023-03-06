@@ -1,10 +1,3 @@
-# ------------------------------------------------------------------------
-# 3D Deformable Transformer
-# ------------------------------------------------------------------------
-# Modified from Deformable DETR 
-# Copyright (c) 2020 SenseTime. All Rights Reserved.
-# Licensed under the Apache License, Version 2.0 [see LICENSE for details]
-
 import copy
 from typing import Optional, List
 import math
@@ -138,17 +131,16 @@ class DeformableTransformerEncoder(nn.Module):
     @staticmethod
     def get_reference_points(spatial_shapes, valid_ratios, device):
         reference_points_list = []
-        for lvl, (D_, H_, W_) in enumerate(spatial_shapes):
+        for lvl, (H_, W_) in enumerate(spatial_shapes):
 
-            ref_d, ref_y, ref_x = torch.meshgrid(torch.linspace(0.5, D_ - 0.5, D_, dtype=torch.float32, device=device),
-                                                 torch.linspace(0.5, H_ - 0.5, H_, dtype=torch.float32, device=device),
+            ref_y, ref_x = torch.meshgrid(torch.linspace(0.5, H_ - 0.5, H_, dtype=torch.float32, device=device),
                                                  torch.linspace(0.5, W_ - 0.5, W_, dtype=torch.float32, device=device))
 
-            ref_d = ref_d.reshape(-1)[None] / (valid_ratios[:, None, lvl, 0] * D_)
+
             ref_y = ref_y.reshape(-1)[None] / (valid_ratios[:, None, lvl, 2] * H_)
             ref_x = ref_x.reshape(-1)[None] / (valid_ratios[:, None, lvl, 1] * W_)
 
-            ref = torch.stack((ref_d, ref_x, ref_y), -1)   # D W H
+            ref = torch.stack((ref_x, ref_y), -1)   # W H
             reference_points_list.append(ref)
         reference_points = torch.cat(reference_points_list, 1)
         reference_points = reference_points[:, :, None] * valid_ratios[:, None]

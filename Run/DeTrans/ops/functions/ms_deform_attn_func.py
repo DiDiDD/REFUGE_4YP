@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 
-def ms_deform_attn_core_pytorch_3D(value, value_spatial_shapes, sampling_locations, attention_weights):
+def ms_deform_attn_core_pytorch_2D(value, value_spatial_shapes, sampling_locations, attention_weights):
     N_, S_, M_, D_ = value.shape
     _, Lq_, M_, L_, P_, _ = sampling_locations.shape
     value_list = value.split([T_ * H_ * W_ for T_, H_, W_ in value_spatial_shapes], dim=1)
