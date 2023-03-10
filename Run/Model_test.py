@@ -23,18 +23,18 @@ args = parser.parse_args()
 lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name, args.model_text,
 
 '''swin_unetr model initialisation'''
-model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
-                     depths=(2, 2, 2, 2),
-                     num_heads=(3, 6, 12, 24),
-                     feature_size=12,
-                     norm_name=norm_name,
-                     drop_rate=0.0,
-                     attn_drop_rate=0.0,
-                     dropout_path_rate=0.0,
-                     normalize=True,
-                     use_checkpoint=False,
-                     spatial_dims=2,
-                     downsample='merging')
+# model_su = SwinUNETR(img_size=(512, 512), in_channels=3, out_channels=3,
+#                      depths=(2, 2, 2, 2),
+#                      num_heads=(3, 6, 12, 24),
+#                      feature_size=12,
+#                      norm_name=norm_name,
+#                      drop_rate=0.0,
+#                      attn_drop_rate=0.0,
+#                      dropout_path_rate=0.0,
+#                      normalize=True,
+#                      use_checkpoint=False,
+#                      spatial_dims=2,
+#                      downsample='merging')
 
 utnet = UTNet(in_chan=3,
               base_chan=12)
@@ -42,8 +42,8 @@ utnet = UTNet(in_chan=3,
 '''select between two model'''
 if model_name == 'unet':
     model = build_unet()
-elif model_name == 'swin_unetr':
-    model = model_su
+# elif model_name == 'swin_unetr':
+#     model = model_su
 elif model_name == 'utnet':
     model = utnet
 
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     f1_report_str += f'\nDisc F1 score is {f1_mean[3,1]:4f} +- {f1_std[3]:4f}'
     writer.add_text('Test f1 score', f1_report_str)
     for i in range(4):
-        writer.add_scaler('Test F1 score', f1_mean[i,1], i)
+        writer.add_scalar('Test F1 score', f1_mean[i,1], i)
     print(f1_report_str)
 writer.flush()
 writer.close()
