@@ -189,7 +189,6 @@ class LinearAttention(nn.Module):
     def forward(self, x):
 
         B, C, H, W = x.shape
-        print('linear atten',x.size())
 
         # B, inner_dim, H, W
         qkv = self.to_qkv(x)
@@ -262,7 +261,6 @@ class LinearAttentionDecoder(nn.Module):
 
         B, C, H, W = x.shape  # low-res feature shape
         BH, CH, HH, WH = q.shape  # high-res feature shape
-        print('transdecoder', x.size(),q.size())
 
         k, v = self.to_kv(x).chunk(2, dim=1)  # B, inner_dim, H, W
         q = self.to_q(q)  # BH, inner_dim, HH, WH
@@ -383,7 +381,6 @@ class RelativePositionBias(nn.Module):
         self.register_buffer("relative_position_index", relative_position_index)
 
     def forward(self, H, W):
-        print('relative encoding')
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(self.h,
                                                                                                                self.w,
                                                                                                                self.h * self.w,
