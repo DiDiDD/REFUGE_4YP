@@ -50,21 +50,21 @@ class Mlp(nn.Module):
 
 class BasicBlock(nn.Module):
 
-    def __init__(self, inplanes, planes, stride=1):
+    def __init__(self, c_in, c_out, stride=1):
         super().__init__()
-        self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn1 = nn.BatchNorm2d(inplanes)
+        self.conv1 = conv3x3(c_in, c_out, stride)
+        self.bn1 = nn.BatchNorm2d(c_in)
         self.relu = nn.ReLU(inplace=True)
 
-        self.conv2 = conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv2 = conv3x3(c_out, c_out)
+        self.bn2 = nn.BatchNorm2d(c_out)
 
         self.shortcut = nn.Sequential()
-        if stride != 1 or inplanes != planes:
+        if stride != 1 or c_in != c_out:
             self.shortcut = nn.Sequential(
-                nn.BatchNorm2d(inplanes),
+                nn.BatchNorm2d(c_in),
                 self.relu,
-                nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False)
+                nn.Conv2d(c_in, c_out, kernel_size=1, stride=stride, bias=False)
             )
 
     def forward(self, x):
@@ -158,7 +158,7 @@ class BasicTransDecoderBlock(nn.Module):
 
 class LinearAttention(nn.Module):
 
-    def __init__(self, dim, heads=4, dim_head=64, attn_drop=0., proj_drop=0., reduce_size=16, projection='interp',
+    def __init__(self, in_c, heads=4, dim_head=64, attn_drop=0., proj_drop=0., reduce_size=16, projection='interp',
                  rel_pos=True):
         super().__init__()
 
@@ -174,21 +174,22 @@ class LinearAttention(nn.Module):
         # self.to_qkv = nn.Conv2d(dim, self.inner_dim*3, kernel_size=1, stride=1, padding=0, bias=True)
         # self.to_out = nn.Conv2d(self.inner_dim, dim, kernel_size=1, stride=1, padding=0, bias=True)
 
-        self.to_qkv = depthwise_separable_conv(dim, self.inner_dim * 3)
-        self.to_out = depthwise_separable_conv(self.inner_dim, dim)
+        self.to_qkv = depthwise_separable_conv(in_c, self.inner_dim * 3)
+        self.to_out = depthwise_separable_conv(self.inner_dim, in_c)
 
         self.attn_drop = nn.Dropout(attn_drop)
         self.proj_drop = nn.Dropout(proj_drop)
 
         if self.rel_pos:
             # 2D input-independent relative position encoding is a little bit better than
-            # 1D input-denpendent counterpart
+            # 1D input-dependent counterpart
             self.relative_position_encoding = RelativePositionBias(heads, reduce_size, reduce_size)
             # self.relative_position_encoding = RelativePositionEmbedding(dim_head, reduce_size)
 
     def forward(self, x):
 
         B, C, H, W = x.shape
+        print('linear atten',x.size())
 
         # B, inner_dim, H, W
         qkv = self.to_qkv(x)
@@ -261,6 +262,7 @@ class LinearAttentionDecoder(nn.Module):
 
         B, C, H, W = x.shape  # low-res feature shape
         BH, CH, HH, WH = q.shape  # high-res feature shape
+        print('transdecoder', x.size(),q.size())
 
         k, v = self.to_kv(x).chunk(2, dim=1)  # B, inner_dim, H, W
         q = self.to_q(q)  # BH, inner_dim, HH, WH
@@ -364,8 +366,7 @@ class RelativePositionBias(nn.Module):
         self.h = h
         self.w = w
 
-        self.relative_position_bias_table = nn.Parameter(
-            torch.randn((2 * h - 1) * (2 * w - 1), num_heads) * 0.02)
+        self.relative_position_bias_table = nn.Parameter(torch.randn((2 * h - 1) * (2 * w - 1), num_heads) * 0.02)
 
         coords_h = torch.arange(self.h)
         coords_w = torch.arange(self.w)
@@ -382,6 +383,7 @@ class RelativePositionBias(nn.Module):
         self.register_buffer("relative_position_index", relative_position_index)
 
     def forward(self, H, W):
+        print('relative encoding')
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(self.h,
                                                                                                                self.w,
                                                                                                                self.h * self.w,
@@ -392,8 +394,7 @@ class RelativePositionBias(nn.Module):
 
         relative_position_bias_expanded = relative_position_bias_expanded.view(H * W, self.h * self.w,
                                                                                self.num_heads).permute(2, 0,
-                                                                                                       1).contiguous().unsqueeze(
-            0)
+                                                                                                       1).contiguous().unsqueeze(0)
 
         return relative_position_bias_expanded
 
@@ -550,3 +551,44 @@ class up_block(nn.Module):
 
         return out
 
+
+class BottleneckBlock(nn.Module):
+
+    def __init__(self, inplanes, planes, stride=1):
+        super().__init__()
+        self.conv1 = conv1x1(inplanes, planes//4, stride=1)
+        self.bn1 = nn.BatchNorm2d(inplanes)
+        self.relu = nn.ReLU(inplace=True)
+
+        self.conv2 = conv3x3(planes//4, planes//4, stride=stride)
+        self.bn2 = nn.BatchNorm2d(planes//4)
+
+        self.conv3 = conv1x1(planes//4, planes, stride=1)
+        self.bn3 = nn.BatchNorm2d(planes//4)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or inplanes != planes:
+            self.shortcut = nn.Sequential(
+                    nn.BatchNorm2d(inplanes),
+                    self.relu,
+                    nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False)
+                    )
+
+    def forward(self, x):
+        residue = x
+
+        out = self.bn1(x)
+        out = self.relu(out)
+        out = self.conv1(out)
+
+        out = self.bn2(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+
+        out = self.bn3(out)
+        out = self.relu(out)
+        out = self.conv3(out)
+
+        out += self.shortcut(residue)
+
+        return out

@@ -12,9 +12,9 @@ class CoTr(nn.Module):
 
         self.TransEncoder = detranslayer(num=3)
 
-        self.d1 = decoder_block()
-        self.d2 = decoder_block()
-        self.d3 = decoder_block()
+        self.d2 = decoder_block(128, 64)
+        self.d1 = decoder_block(128, 32)
+        self.d0 = decoder_block_final(64, 3)
 
     def forward(self, input):
         """ CNN-Encoder """
@@ -24,14 +24,15 @@ class CoTr(nn.Module):
         x3_h = self.e3(x2_v)
 
         """ DeTrans-Encoder """
-        v1, v2, v3 = self.d(x1_h, x2_h, x3_h)
-
+        v1, v2, v3 = self.TransEncoder(x1_h, x2_h, x3_h)
 
         '''Decoder'''
-        v2 = torch.cat((self.d3(v3), h3), dim=1)
-        v2
-        v1 = torch.cat((self.d2(v2), h2), dim=1)
-        v0 = torch.cat((self.d1(v1), h1), dim=1)
+        de_l2 = nn.ConvTranspose2d(128, 128, kernel_size=2, stride=2, padding=0)(v3)
+        de_l1 = self.d2(de_l2, v2)
+        de_l0 = self.d1(de_l1, v1)
+        output = self.d0(de_l0, v0)
+
+        return output
 
 
 
