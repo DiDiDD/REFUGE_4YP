@@ -53,16 +53,16 @@ class BasicBlock(nn.Module):
     def __init__(self, c_in, c_out, stride=1):
         super().__init__()
         self.conv1 = conv3x3(c_in, c_out, stride)
-        self.bn1 = nn.InstanceNorm2d(c_in)
+        self.bn1 = nn.BatchNorm2d(c_in)
         self.relu = nn.ReLU(inplace=True)
 
         self.conv2 = conv3x3(c_out, c_out)
-        self.bn2 = nn.InstanceNorm2d(c_out)
+        self.bn2 = nn.BatchNorm2d(c_out)
 
         self.shortcut = nn.Sequential()
         if stride != 1 or c_in != c_out:
             self.shortcut = nn.Sequential(
-                nn.InstanceNorm2d(c_in),
+                nn.BatchNorm2d(c_in),
                 self.relu,
                 nn.Conv2d(c_in, c_out, kernel_size=1, stride=stride, bias=False)
             )
@@ -88,25 +88,31 @@ class BasicTransBlock(nn.Module):
     def __init__(self, in_ch, heads, dim_head, attn_drop=0., proj_drop=0., reduce_size=16, projection='interp',
                  rel_pos=True):
         super().__init__()
-        self.bn1 = nn.InstanceNorm2d(in_ch)
+        self.bn1 = nn.BatchNorm2d(in_ch)
 
         self.attn = LinearAttention(in_ch, heads=heads, dim_head=in_ch // heads, attn_drop=attn_drop,
                                     proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
                                     rel_pos=rel_pos)
 
-        self.bn2 = nn.InstanceNorm2d(in_ch)
+        self.bn2 = nn.BatchNorm2d(in_ch)
         self.relu = nn.ReLU(inplace=True)
         self.mlp = nn.Conv2d(in_ch, in_ch, kernel_size=1, bias=False)
         # conv1x1 has not difference with mlp in performance
 
     def forward(self, x):
-        out = self.bn1(x)
+        # out = self.bn1(x)
+        norm_1 = nn.LayerNorm(x.shape[1:])
+        out = norm_1(x)
+
         out, q_k_attn = self.attn(out)
 
         out = out + x
         residue = out
 
-        out = self.bn2(out)
+        # out = self.bn2(out)
+        norm_2 = nn.LayerNorm(out.shape[1:])
+        out = norm_2(out)
+
         out = self.relu(out)
         out = self.mlp(out)
 
@@ -136,15 +142,20 @@ class BasicTransDecoderBlock(nn.Module):
     def forward(self, x1, x2):
         residue = F.interpolate(self.conv_ch(x1), size=x2.shape[-2:], mode='bilinear', align_corners=True)
         # x1: low-res, x2: high-res
-        x1 = self.bn_l(x1)
-        x2 = self.bn_h(x2)
+        # x1 = self.bn_l(x1)
+        # x2 = self.bn_h(x2)
+        norm_x1 = nn.LayerNorm(x1.shape[1:])
+        norm_x2 = nn.LayerNorm(x2.shape[1:])
+        x1 = norm_x1(x1)
+        x2 = norm_x2(x2)
 
         out, q_k_attn = self.attn(x2, x1)
 
         out = out + residue
         residue = out
-
-        out = self.bn2(out)
+        # out = self.bn2(out)
+        norm_2 = nn.LayerNorm(out.shape[1:])
+        out = norm_2(out)
         out = self.relu(out)
         out = self.mlp(out)
 

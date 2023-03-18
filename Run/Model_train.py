@@ -22,7 +22,6 @@ parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_u
 parser.add_argument('norm_name', metavar='norm_name',  help='Specify a normalisation method')
 parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
 parser.add_argument('--utnet_base_c', metavar='--utnet_base_c', type=int, help='utnet_base_channel')
-
 # parser.add_argument('--depth', metavar='--depth', type=int, nargs='+', help='num_depths in swin_unetr')
 args = parser.parse_args()
 lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name, args.model_text

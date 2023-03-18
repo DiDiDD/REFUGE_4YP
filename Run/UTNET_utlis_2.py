@@ -73,13 +73,13 @@ class BasicBlock(nn.Module):
 
         # out = self.bn1(x)
         norm1 = norm(self.norm_name, x)
-        out = norm(x)
+        out = norm1(x)
         out = self.relu(out)
         out = self.conv1(out)
 
         # out = self.bn2(out)
-        norm1 = norm(out, self.norm_name)
-        out = norm(out)
+        norm2 = norm(out, self.norm_name)
+        out = norm2(out)
         out = self.relu(out)
         out = self.conv2(out)
 
