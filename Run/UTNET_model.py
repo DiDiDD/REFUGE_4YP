@@ -213,6 +213,3 @@ class UTNet_Encoderonly(nn.Module):
             out = self.outc(out)
 
             return out
-
-x = torch.rand((5,3,128,128))
-UTNet(in_chan=3,base_chan=3, num_classes=3)(x)
