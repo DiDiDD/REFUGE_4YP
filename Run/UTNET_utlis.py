@@ -101,7 +101,7 @@ class BasicTransBlock(nn.Module):
 
     def forward(self, x):
         # out = self.bn1(x)
-        norm_1 = nn.LayerNorm(x.shape[1:]).to('cuda')
+        norm_1 = nn.LayerNorm(x.shape[1:]).to(f'cuda:{x.get_device}')
         out = norm_1(x)
 
         out, q_k_attn = self.attn(out)
@@ -110,7 +110,7 @@ class BasicTransBlock(nn.Module):
         residue = out
 
         # out = self.bn2(out)
-        norm_2 = nn.LayerNorm(out.shape[1:]).to('cuda')
+        norm_2 = nn.LayerNorm(out.shape[1:]).to(f'cuda:{x.get_device}')
         out = norm_2(out)
 
         out = self.relu(out)
@@ -144,8 +144,8 @@ class BasicTransDecoderBlock(nn.Module):
         # x1: low-res, x2: high-res
         # x1 = self.bn_l(x1)
         # x2 = self.bn_h(x2)
-        norm_x1 = nn.LayerNorm(x1.shape[1:]).to('cuda')
-        norm_x2 = nn.LayerNorm(x2.shape[1:]).to('cuda')
+        norm_x1 = nn.LayerNorm(x1.shape[1:]).to(f'cuda:{x1.get_device}')
+        norm_x2 = nn.LayerNorm(x2.shape[1:]).to(f'cuda:{x1.get_device}')
         x1 = norm_x1(x1)
         x2 = norm_x2(x2)
 
@@ -154,7 +154,7 @@ class BasicTransDecoderBlock(nn.Module):
         out = out + residue
         residue = out
         # out = self.bn2(out)
-        norm_2 = nn.LayerNorm(out.shape[1:]).to('cuda')
+        norm_2 = nn.LayerNorm(out.shape[1:]).to(f'cuda:{x1.get_device}')
         out = norm_2(out)
         out = self.relu(out)
         out = self.mlp(out)
