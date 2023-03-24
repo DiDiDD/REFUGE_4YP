@@ -16,27 +16,28 @@ parser = argparse.ArgumentParser(description='Specify Parameters')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
-parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet', 'cotr'], help='Specify a model')
-parser.add_argument('norm_name', metavar='norm_name', help='Specify a normalisation method')
+parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
+parser.add_argument('norm_name', metavar='norm_name',  help='Specify a normalisation method')
 parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
-parser.add_argument('--depth', metavar='--depth', type=int, nargs='+', help='num_depths in swin_unetr')
+parser.add_argument('--utnet_base_c', metavar='--utnet_base_c', type=int, help='utnet_base_channel')
+# parser.add_argument('--depth', metavar='--depth', type=int, nargs='+', help='num_depths in swin_unetr')
 args = parser.parse_args()
-lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name, args.model_text,
-
-depths = args.depth
-depths = tuple(depths)
-model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
-                    depths=depths,
-                    num_heads=(3, 6, 12, 24),
-                    feature_size=12,
-                    norm_name= norm_name,
-                    drop_rate=0.0,
-                    attn_drop_rate=0.0,
-                    dropout_path_rate=0.0,
-                    normalize=True,
-                    use_checkpoint=False,
-                    spatial_dims=2,
-                    downsample='merging')
+lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name, args.model_text
+utnet_base_c = args.utnet_base_c
+# depths = args.depth
+# depths = tuple(depths)
+# model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
+#                     depths=depths,
+#                     num_heads=(3, 6, 12, 24),
+#                     feature_size=12,
+#                     norm_name= norm_name,
+#                     drop_rate=0.0,
+#                     attn_drop_rate=0.0,
+#                     dropout_path_rate=0.0,
+#                     normalize=True,
+#                     use_checkpoint=False,
+#                     spatial_dims=2,
+#                     downsample='merging')
 
 utnet = UTNet(in_chan=3,
               base_chan=12)
@@ -44,8 +45,8 @@ utnet = UTNet(in_chan=3,
 '''select between two model'''
 if model_name == 'unet':
     model = build_unet()
-elif model_name == 'swin_unetr':
-    model = model_su
+# elif model_name == 'swin_unetr':
+#     model = model_su
 elif model_name == 'utnet':
     model = utnet
 
