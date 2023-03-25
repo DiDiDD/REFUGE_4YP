@@ -44,7 +44,7 @@ base_c = args.base_c
 #                     downsample='merging')
 
 utnet = UTNet(in_chan=3, base_chan=base_c)
-unet = UNet(in_c=3, out_c=3, base_c=base_c)
+unet = UNet(in_c=3, out_c=3, base_c=base_c, norm_name = norm_name)
 
 '''select between two model'''
 if model_name == 'unet':
@@ -53,7 +53,7 @@ if model_name == 'unet':
 #     model = model_su
 elif model_name == 'utnet':
     model = utnet
-print('no')
+
 
 data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'
 writer = SummaryWriter(data_save_path)
