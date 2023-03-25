@@ -2,6 +2,7 @@ import os
 import random
 import numpy as np
 import torch
+import torch.nn as nn
 
 def seeding(seed):  # seeding the randomness
     random.seed(seed)
@@ -94,3 +95,16 @@ def mask_parse(mask):
     mask = np.expand_dims(mask, axis=-1)                # (512, 512, 1)
     mask = np.concatenate([mask, mask, mask], axis=-1)  # (512, 512, 3)
     return mask
+
+
+def norm(input: torch.tensor, norm_name: str):
+    if norm_name == 'layer':
+        normaliza = nn.LayerNorm(list(input.shape)[1:])
+    elif norm_name == 'batch':
+        normaliza = nn.BatchNorm2d(list(input.shape)[1])
+    elif norm_name == 'instance':
+        normaliza = nn.InstanceNorm2d(list(input.shape)[1])
+
+    output = normaliza(input)
+
+    return output

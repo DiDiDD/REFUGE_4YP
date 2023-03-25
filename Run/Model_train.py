@@ -4,7 +4,7 @@ from glob import glob
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from data import train_test_split
-from UNet_model import build_unet
+from UNet_model import UNet
 from monai.losses import DiceCELoss
 from utils import seeding, train_time, create_dir, create_file, f1_valid_score
 import torch
@@ -21,11 +21,13 @@ parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify wh
 parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
 parser.add_argument('norm_name', metavar='norm_name',  help='Specify a normalisation method')
 parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
-parser.add_argument('--utnet_base_c', metavar='--utnet_base_c', type=int, help='utnet_base_channel')
+parser.add_argument('--unet_')
+parser.add_argument('--base_c', metavar='--base_c', type=int, help='base_channel which is the first output channel from first conv block')
 # parser.add_argument('--depth', metavar='--depth', type=int, nargs='+', help='num_depths in swin_unetr')
+
 args = parser.parse_args()
 lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name, args.model_text
-utnet_base_c = args.utnet_base_c
+base_c = args.base_c
 # depths = args.depth
 # depths = tuple(depths)
 # model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
@@ -41,12 +43,12 @@ utnet_base_c = args.utnet_base_c
 #                     spatial_dims=2,
 #                     downsample='merging')
 
-utnet = UTNet(in_chan=3,
-              base_chan=utnet_base_c)
+utnet = UTNet(in_chan=3, base_chan=base_c)
+unet = UNet(in_c=3, out_c=3, base_c=base_c)
 
 '''select between two model'''
 if model_name == 'unet':
-    model = build_unet()
+    model = unet
 # elif model_name == 'swin_unetr':
 #     model = model_su
 elif model_name == 'utnet':

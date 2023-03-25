@@ -606,5 +606,10 @@ def norm(norm_name: str, input: torch.tensor):
         normaliza = nn.BatchNorm2d(list(input.shape)[1])
     elif norm_name == 'instance':
         normaliza = nn.InstanceNorm2d(list(input.shape)[1])
+    # elif norm_name == '':
+    #     normaliza =
 
-    return normaliza
+
+    output = normaliza(input)
+
+    return output
