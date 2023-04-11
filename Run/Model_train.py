@@ -34,6 +34,7 @@ lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s
 base_c = args.base_c
 depths = args.depth
 depths= json.loads(depths)
+depths = tuple(depths)
 
 model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=depths,
