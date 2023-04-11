@@ -1020,12 +1020,12 @@ class SwinTransformer(nn.Module):
             x_shape = x.size()
             if len(x_shape) == 5:
                 n, ch, d, h, w = x_shape
-                x = nn.BatchNorm3d(ch)(x)
+                x = nn.InstanceNorm3d(ch).to(x.device)(x)
                 #x = rearrange(x, "n d h w c -> n c d h w")
 
             elif len(x_shape) == 4:
                 n, ch, h, w = x_shape
-                x = nn.InstanceNorm2d(ch)(x)
+                x = nn.InstanceNorm2d(ch).to(x.device)(x)
                 #x = rearrange(x, "n h w c -> n c h w")
         return x
 
