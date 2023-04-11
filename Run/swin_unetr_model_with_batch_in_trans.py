@@ -1025,7 +1025,7 @@ class SwinTransformer(nn.Module):
 
             elif len(x_shape) == 4:
                 n, ch, h, w = x_shape
-                x = nn.BatchNorm2d(ch)(x)
+                x = nn.BatchNorm2d(ch).to(x.device)(x)
                 #x = rearrange(x, "n h w c -> n c h w")
         return x
 

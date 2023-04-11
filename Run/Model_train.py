@@ -77,6 +77,7 @@ model_su3 = SwinUNETR_instance(img_size = (512, 512), in_channels=3, out_channel
                     downsample='merging')
 
 utnet = UTNet(in_chan=3, base_chan=base_c)
+
 unet = UNet(in_c=3, out_c=3, base_c=base_c, norm_name=norm_name)
 
 '''select between two model'''
@@ -90,8 +91,6 @@ elif model_name == 'swin_unetr' and norm_name == 'instance':
     model = model_su3
 elif model_name == 'utnet':
     model = utnet
-
-print('We are using model: ', model)
 
 
 data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'
