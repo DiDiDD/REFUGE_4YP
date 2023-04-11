@@ -25,7 +25,7 @@ parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_u
 
 parser.add_argument('norm_name', metavar='norm_name',  help='Specify a normalisation method')
 parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
-parser.add_argument('--base_c', metavar='--base_c', defaulyt = 12,type=int, help='base_channel which is the first output channel from first conv block')
+parser.add_argument('--base_c', metavar='--base_c', default = 12,type=int, help='base_channel which is the first output channel from first conv block')
 
 parser.add_argument('--depth', metavar='--depth', type=str, default = '[2,2,2,2]',  help='num_depths in swin_unetr')
 
