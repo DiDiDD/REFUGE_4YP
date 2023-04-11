@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-
+# complete
 class conv_block(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -17,12 +18,13 @@ class conv_block(nn.Module):
         return x
 
 
+# complete
 class ResBlock(nn.Module):
     def __init__(self, in_c: int, out_c: int):
         super().__init__()
         self.conv1 = nn.Conv2d(in_c, in_c*2, 3, padding=1)
-        self.conv2 = nn.Conv2d(hidden_c, out_c, 3, padding=1)
-        self.batchnorm1 = nn.BatchNorm2d(hidden_c)
+        self.conv2 = nn.Conv2d(in_c*2, out_c, 3, padding=1)
+        self.batchnorm1 = nn.BatchNorm2d(in_c*2)
         self.batchnorm2 = nn.BatchNorm2d(out_c)
 
     def convblock(self, x):
@@ -34,19 +36,20 @@ class ResBlock(nn.Module):
         return x + self.convblock(x)
 
 
+# complete
 class encoder_block(nn.Module):
-    def __init__(self, in_c, hidden_c, out_c, num_ResBlock, out_v):
+    def __init__(self, in_c, out_c, num_ResBlock, out_v):
         super().__init__()
-        self.resblock = ResBlock(in_c, hidden_c, out_c)
+        self.resblock = ResBlock(in_c, out_c)
         self.num_res = num_ResBlock
         self.pool = nn.MaxPool2d((2, 2))
         self.out_v = out_v
 
-    def forward(self, inputs):
-        for i in range(self.num_ResBlock):
+    def forward(self, x):
+        for i in range(self.num_res):
             x = self.resblock(x)
 
-        if out_v==True:
+        if self.out_v == True:
             x_v = self.pool(x)
             x_h = x
             return x_v, x_h
@@ -91,7 +94,7 @@ class detranslayer(nn.Module):
 class decoder_block(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
-        self.resblock = ResBlock(in_c, hidden_size, out_c)
+        self.resblock = ResBlock(in_c, out_c)
         self.up = nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2, padding=0)
 
     def forward(self, inputs, skip):
@@ -112,3 +115,16 @@ class decoder_block_final(nn.Module):
         return
 
 
+def norm(input: torch.tensor, norm_name: str):
+    if norm_name == 'layer':
+        normaliza = nn.LayerNorm(list(input.shape)[1:])
+    elif norm_name == 'batch':
+        normaliza = nn.BatchNorm2d(list(input.shape)[1])
+    elif norm_name == 'instance':
+        normaliza = nn.InstanceNorm2d(list(input.shape)[1])
+
+    normaliza = normaliza.to(f'cuda:{input.get_device()}')
+
+    output = normaliza(input)
+
+    return output

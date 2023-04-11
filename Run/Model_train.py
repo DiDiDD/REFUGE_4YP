@@ -1,56 +1,76 @@
 import time
 import numpy as np
+import json
 from glob import glob
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from data import train_test_split
 from UNet_model import UNet
 from monai.losses import DiceCELoss
-from utils import seeding, train_time, create_dir, create_file, f1_valid_score
+from utils import *
 import torch
 from monai.networks.nets import SwinUNETR
+from swin_unetr_model_with_batch_in_trans import SwinUNETR_edit
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 from UTNET_model import UTNet
 
 
 parser = argparse.ArgumentParser(description='Specify Parameters')
+
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
 parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify which gpu to use')
 parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
+
 parser.add_argument('norm_name', metavar='norm_name',  help='Specify a normalisation method')
 parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
-parser.add_argument('--unet_')
 parser.add_argument('--base_c', metavar='--base_c', type=int, help='base_channel which is the first output channel from first conv block')
-# parser.add_argument('--depth', metavar='--depth', type=int, nargs='+', help='num_depths in swin_unetr')
+
+parser.add_argument('--depth', metavar='--depth', type=str, default = '[2,2,2,2]',  help='num_depths in swin_unetr')
 
 args = parser.parse_args()
 lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name, args.model_text
 base_c = args.base_c
-# depths = args.depth
-# depths = tuple(depths)
-# model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
-#                     depths=depths,
-#                     num_heads=(3, 6, 12, 24),
-#                     feature_size=12,
-#                     norm_name= norm_name,
-#                     drop_rate=0.0,
-#                     attn_drop_rate=0.0,
-#                     dropout_path_rate=0.0,
-#                     normalize=True,
-#                     use_checkpoint=False,
-#                     spatial_dims=2,
-#                     downsample='merging')
+depths = args.depth
+depths= json.loads(depths)
+
+model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
+                    depths=depths,
+                    num_heads=(3, 6, 12, 24),
+                    feature_size=12,
+                    norm_name= 'instance',
+                    drop_rate=0.0,
+                    attn_drop_rate=0.0,
+                    dropout_path_rate=0.0,
+                    normalize=True,
+                    use_checkpoint=False,
+                    spatial_dims=2,
+                    downsample='merging')
+
+model_su2 = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
+                    depths=depths,
+                    num_heads=(3, 6, 12, 24),
+                    feature_size=12,
+                    norm_name= 'instance',
+                    drop_rate=0.0,
+                    attn_drop_rate=0.0,
+                    dropout_path_rate=0.0,
+                    normalize=True,
+                    use_checkpoint=False,
+                    spatial_dims=2,
+                    downsample='merging')
 
 utnet = UTNet(in_chan=3, base_chan=base_c)
-unet = UNet(in_c=3, out_c=3, base_c=base_c, norm_name = norm_name)
+unet = UNet(in_c=3, out_c=3, base_c=base_c, norm_name=norm_name)
 
 '''select between two model'''
 if model_name == 'unet':
     model = unet
-# elif model_name == 'swin_unetr':
-#     model = model_su
+elif model_name == 'swin_unetr' and norm_name== 'layer':
+    model = model_su
+elif model_name == 'swin_unetr' and norm_name != 'batch':
+    model = model_su2
 elif model_name == 'utnet':
     model = utnet
 
@@ -114,9 +134,8 @@ if __name__ == "__main__":
 
     model = model.to(device)
 
-    lr1 = lr
     iteration = 2000
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr1)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
     train_loss_fn = DiceCELoss(include_background=False, softmax=True, to_onehot_y=True, lambda_dice=0.5, lambda_ce=0.5)
     eval_loss_fn = f1_valid_score
@@ -125,6 +144,8 @@ if __name__ == "__main__":
     best_valid_score = 0.0
 
     for iteration_n in tqdm(range(iteration)):
+        optimizer = torch.optim.Adam(model.parameters(), lr=get_lr(iteration, lr))
+        # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         start_time = time.time()
         train_loss = train(model, train_loader, optimizer, train_loss_fn, device)
         s_bg, s_outer, s_cup, s_disc, valid_score = evaluate(model, valid_loader, eval_loss_fn, device)
