@@ -69,7 +69,7 @@ if model_name == 'unet':
     model = unet
 elif model_name == 'swin_unetr' and norm_name== 'layer':
     model = model_su
-elif model_name == 'swin_unetr' and norm_name != 'batch':
+elif model_name == 'swin_unetr' and norm_name != 'layer':
     model = model_su2
 elif model_name == 'utnet':
     model = utnet
