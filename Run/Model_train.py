@@ -10,7 +10,8 @@ from monai.losses import DiceCELoss
 from utils import *
 import torch
 from monai.networks.nets import SwinUNETR
-from swin_unetr_model_with_batch_in_trans import SwinUNETR_edit
+from swin_unetr_model_with_batch_in_trans import SwinUNETR_batch
+from swin_unetr_model_with_instance import SwinUNETR_instance
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 from UTNET_model import UTNet
@@ -49,7 +50,20 @@ model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     spatial_dims=2,
                     downsample='merging')
 
-model_su2 = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
+model_su2 = SwinUNETR_batch(img_size = (512, 512), in_channels=3, out_channels=3,
+                    depths=depths,
+                    num_heads=(3, 6, 12, 24),
+                    feature_size=12,
+                    norm_name= 'instance',
+                    drop_rate=0.0,
+                    attn_drop_rate=0.0,
+                    dropout_path_rate=0.0,
+                    normalize=True,
+                    use_checkpoint=False,
+                    spatial_dims=2,
+                    downsample='merging')
+
+model_su3 = SwinUNETR_instance(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=depths,
                     num_heads=(3, 6, 12, 24),
                     feature_size=12,
@@ -70,10 +84,14 @@ if model_name == 'unet':
     model = unet
 elif model_name == 'swin_unetr' and norm_name== 'layer':
     model = model_su
-elif model_name == 'swin_unetr' and norm_name != 'layer':
+elif model_name == 'swin_unetr' and norm_name == 'batch':
     model = model_su2
+elif model_name == 'swin_unetr' and norm_name == 'instance':
+    model = model_su3
 elif model_name == 'utnet':
     model = utnet
+
+print('We are using model: ', model)
 
 
 data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'

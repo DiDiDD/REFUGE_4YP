@@ -29,7 +29,7 @@ from monai.utils import ensure_tuple_rep, look_up_option, optional_import
 rearrange, _ = optional_import("einops", name="rearrange")
 
 __all__ = [
-    "SwinUNETR_edit",
+    "SwinUNETR_batch",
     "window_partition",
     "window_reverse",
     "WindowAttention",
@@ -42,7 +42,7 @@ __all__ = [
 ]
 
 
-class SwinUNETR_edit(nn.Module):
+class SwinUNETR_batch(nn.Module):
     """
     Swin UNETR based on: "Hatamizadeh et al.,
     Swin UNETR: Swin Transformers for Semantic Segmentation of Brain Tumors in MRI Images
