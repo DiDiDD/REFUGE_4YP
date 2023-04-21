@@ -212,8 +212,3 @@ class UTNet_Encoderonly(nn.Module):
             out = self.outc(out)
 
             return out
-
-
-x= torch.rand((1,1,128,128))
-y = UTNet(in_chan=1, base_chan=3,num_classes=1, norm_name='layer')(x)
-print(y.shape)

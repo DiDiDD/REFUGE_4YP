@@ -1,4 +1,4 @@
-from Run.data_aug.data import train_test_split
+from data import train_test_split
 import numpy as np
 from glob import glob
 import cv2
@@ -22,7 +22,7 @@ parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify wh
 parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
 
 parser.add_argument('norm_name', metavar='norm_name',  help='Specify a normalisation method')
-parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
+# parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
 parser.add_argument('--base_c', metavar='--base_c', default = 12,type=int, help='base_channel which is the first output channel from first conv block')
 # swin_unetr paras
 parser.add_argument('--depth', metavar='--depth', type=str, default = '[2,2,2,2]',  help='num_depths in swin_unetr')
@@ -78,7 +78,7 @@ model_su3 = SwinUNETR_instance(img_size = (512, 512), in_channels=3, out_channel
                     spatial_dims=2,
                     downsample='merging')
 
-utnet = UTNet(in_chan=3, num_classes=3, base_chan=base_c)
+utnet = UTNet(in_chan=3, num_classes=3, base_chan=base_c, norm_name=norm_name)
 
 unet = UNet(in_c=3, out_c=3, base_c=base_c, norm_name=norm_name)
 
@@ -122,6 +122,7 @@ if __name__ == "__main__":
     dataset_size = len(test_x)
     checkpoint_path_lowloss = data_save_path + f'Checkpoint/lr_{lr}_bs_{batch_size}_lowloss.pth'
     checkpoint_path_final = data_save_path + f'Checkpoint/lr_{lr}_bs_{batch_size}_final.pth'
+    create_dir(data_save_path + f'results{test_data_num}')
 
     """ Load the checkpoint """
     model.to(device)

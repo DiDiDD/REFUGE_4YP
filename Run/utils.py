@@ -104,7 +104,6 @@ def norm(input: torch.tensor, norm_name: str):
         normaliza = nn.BatchNorm2d(list(input.shape)[1])
     elif norm_name == 'instance':
         normaliza = nn.InstanceNorm2d(list(input.shape)[1])
-    print(normaliza)
 
     normaliza = normaliza.to(f'cuda:{input.get_device()}')
 

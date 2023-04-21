@@ -3,7 +3,7 @@ import json
 from glob import glob
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-from Run.data_aug.data import train_test_split
+from Run.data import train_test_split
 from UNet_model import UNet
 from monai.losses import DiceCELoss
 from utils import *
@@ -79,7 +79,7 @@ model_su3 = SwinUNETR_instance(img_size = (512, 512), in_channels=3, out_channel
                     spatial_dims=2,
                     downsample='merging')
 
-utnet = UTNet(in_chan=3, num_classes=3, base_chan=base_c)
+utnet = UTNet(in_chan=3, num_classes=3, base_chan=base_c, norm_name=norm_name)
 
 unet = UNet(in_c=3, out_c=3, base_c=base_c, norm_name=norm_name)
 

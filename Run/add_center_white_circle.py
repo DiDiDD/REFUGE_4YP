@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from glob import glob
 from tqdm import tqdm
-from Run.utils import create_dir
+from utils import create_dir
 
 
 def load_data(path_test_x):
@@ -12,10 +12,9 @@ def load_data(path_test_x):
 
 
 def draw_white_circle(image):
-    center_coordinates = tuple(np.random.randint(low=300, high=350, size=2, dtype=int))
-    axesLength = tuple(np.random.randint(low=10, high=30, size=2, dtype=int))
+    center_coordinates = tuple(np.random.randint(low=230, high=280, size=2, dtype=int))
+    axesLength = tuple(np.random.randint(low=20, high=37, size=2, dtype=int))
     angle = np.random.randint(low=0, high=180, size=1, dtype=int).item()
-    print(center_coordinates, axesLength, angle)
     startAngle = 0
     endAngle = 360
     color = (255, 255, 255)
@@ -35,13 +34,11 @@ if __name__ == "__main__":
     index = 0
     for i in tqdm(test_x):
         name = i.split("/")[-1].split(".")[0]
+        i = cv2.imread(i, cv2.IMREAD_COLOR)
         m = draw_white_circle(i)
-        m = draw_white_circle(m)
-        m = draw_white_circle(m)
-
         tmp_image_name = f"{name}_{index}.jpg"
 
-        image_path = os.path.join(path_to_save_newdata, "image", tmp_image_name)
+        image_path = os.path.join(path_to_save_newdata, tmp_image_name)
         cv2.imwrite(image_path, m)
 
         index += 1
