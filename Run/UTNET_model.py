@@ -8,18 +8,17 @@ import pdb
 class UTNet(nn.Module):
     def __init__(self, in_chan, base_chan, num_classes=3, reduce_size=8, block_list='234', num_blocks=[1, 2, 4],
                  projection='interp', num_heads=[2, 4, 8], attn_drop=0., proj_drop=0., bottleneck=False, maxpool=True,
-                 rel_pos=True, aux_loss=False):
+                 rel_pos=True, aux_loss=False, norm_name='batch'):
         super().__init__()
-
         self.aux_loss = aux_loss
         self.inc = [BasicBlock(in_chan, base_chan)]
         if '0' in block_list:
             self.inc.append(BasicTransBlock(base_chan, heads=num_heads[-5], dim_head=base_chan // num_heads[-5],
                                             attn_drop=attn_drop, proj_drop=proj_drop, reduce_size=reduce_size,
-                                            projection=projection, rel_pos=rel_pos))
+                                            projection=projection, rel_pos=rel_pos, norm_name = norm_name))
             self.up4 = up_block_trans(2 * base_chan, base_chan, num_block=0, bottleneck=bottleneck, heads=num_heads[-4],
                                       dim_head=base_chan // num_heads[-4], attn_drop=attn_drop, proj_drop=proj_drop,
-                                      reduce_size=reduce_size, projection=projection, rel_pos=rel_pos)
+                                      reduce_size=reduce_size, projection=projection, rel_pos=rel_pos, norm_name = norm_name)
 
         else:
             self.inc.append(BasicBlock(base_chan, base_chan))
@@ -30,11 +29,11 @@ class UTNet(nn.Module):
             self.down1 = down_block_trans(base_chan, 2 * base_chan, num_block=num_blocks[-4], bottleneck=bottleneck,
                                           maxpool=maxpool, heads=num_heads[-4], dim_head=2 * base_chan // num_heads[-4],
                                           attn_drop=attn_drop, proj_drop=proj_drop, reduce_size=reduce_size,
-                                          projection=projection, rel_pos=rel_pos)
+                                          projection=projection, rel_pos=rel_pos, norm_name=norm_name)
             self.up3 = up_block_trans(4 * base_chan, 2 * base_chan, num_block=0, bottleneck=bottleneck,
                                       heads=num_heads[-3], dim_head=2 * base_chan // num_heads[-3], attn_drop=attn_drop,
                                       proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
-                                      rel_pos=rel_pos)
+                                      rel_pos=rel_pos, norm_name = norm_name)
         else:
             self.down1 = down_block(base_chan, 2 * base_chan, (2, 2), num_block=2)
             self.up3 = up_block(4 * base_chan, 2 * base_chan, scale=(2, 2), num_block=2)
@@ -43,11 +42,11 @@ class UTNet(nn.Module):
             self.down2 = down_block_trans(2 * base_chan, 4 * base_chan, num_block=num_blocks[-3], bottleneck=bottleneck,
                                           maxpool=maxpool, heads=num_heads[-3], dim_head=4 * base_chan // num_heads[-3],
                                           attn_drop=attn_drop, proj_drop=proj_drop, reduce_size=reduce_size,
-                                          projection=projection, rel_pos=rel_pos)
+                                          projection=projection, rel_pos=rel_pos, norm_name = norm_name)
             self.up2 = up_block_trans(8 * base_chan, 4 * base_chan, num_block=0, bottleneck=bottleneck,
                                       heads=num_heads[-2], dim_head=4 * base_chan // num_heads[-2], attn_drop=attn_drop,
                                       proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
-                                      rel_pos=rel_pos)
+                                      rel_pos=rel_pos, norm_name = norm_name)
 
         else:
             self.down2 = down_block(2 * base_chan, 4 * base_chan, (2, 2), num_block=2)
@@ -57,11 +56,11 @@ class UTNet(nn.Module):
             self.down3 = down_block_trans(4 * base_chan, 8 * base_chan, num_block=num_blocks[-2], bottleneck=bottleneck,
                                           maxpool=maxpool, heads=num_heads[-2], dim_head=8 * base_chan // num_heads[-2],
                                           attn_drop=attn_drop, proj_drop=proj_drop, reduce_size=reduce_size,
-                                          projection=projection, rel_pos=rel_pos)
+                                          projection=projection, rel_pos=rel_pos, norm_name = norm_name)
             self.up1 = up_block_trans(16 * base_chan, 8 * base_chan, num_block=0, bottleneck=bottleneck,
                                       heads=num_heads[-1], dim_head=8 * base_chan // num_heads[-1], attn_drop=attn_drop,
                                       proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
-                                      rel_pos=rel_pos)
+                                      rel_pos=rel_pos, norm_name=norm_name)
 
         else:
             self.down3 = down_block(4 * base_chan, 8 * base_chan, (2, 2), num_block=2)
@@ -72,7 +71,7 @@ class UTNet(nn.Module):
                                           bottleneck=bottleneck, maxpool=maxpool, heads=num_heads[-1],
                                           dim_head=16 * base_chan // num_heads[-1], attn_drop=attn_drop,
                                           proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
-                                          rel_pos=rel_pos)
+                                          rel_pos=rel_pos, norm_name=norm_name)
         else:
             self.down4 = down_block(8 * base_chan, 16 * base_chan, (2, 2), num_block=2)
 
@@ -213,3 +212,8 @@ class UTNet_Encoderonly(nn.Module):
             out = self.outc(out)
 
             return out
+
+
+x= torch.rand((1,1,128,128))
+y = UTNet(in_chan=1, base_chan=3,num_classes=1, norm_name='layer')(x)
+print(y.shape)

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
+from utils import norm
 import pdb
 
 
@@ -86,30 +87,30 @@ class BasicBlock(nn.Module):
 class BasicTransBlock(nn.Module):
 
     def __init__(self, in_ch, heads, dim_head, attn_drop=0., proj_drop=0., reduce_size=16, projection='interp',
-                 rel_pos=True):
+                 rel_pos=True, norm_name='batch'):
         super().__init__()
-        self.bn1 = nn.BatchNorm2d(in_ch)
-
+        self.norm_name = norm_name
         self.attn = LinearAttention(in_ch, heads=heads, dim_head=in_ch // heads, attn_drop=attn_drop,
                                     proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
                                     rel_pos=rel_pos)
 
-        self.bn2 = nn.BatchNorm2d(in_ch)
         self.relu = nn.ReLU(inplace=True)
         self.mlp = nn.Conv2d(in_ch, in_ch, kernel_size=1, bias=False)
         # conv1x1 has not difference with mlp in performance
 
     def forward(self, x):
-        out = self.bn1(x)
-        # norm_1 = nn.LayerNorm(x.shape[1:]).to(f'cuda:{x.get_device()}')
-        # out = norm_1(x)
+        out = norm(x, self.norm_name)
+        # out = self.bn1(x)
+        # # norm_1 = nn.LayerNorm(x.shape[1:]).to(f'cuda:{x.get_device()}')
+        # # out = norm_1(x)
 
         out, q_k_attn = self.attn(out)
 
         out = out + x
         residue = out
 
-        out = self.bn2(out)
+        out = norm(out, self.norm_name)
+        # out = self.bn2(out)
         # norm_2 = nn.LayerNorm(out.shape[1:]).to(f'cuda:{x.get_device()}')
         # out = norm_2(out)
 
@@ -124,12 +125,12 @@ class BasicTransBlock(nn.Module):
 class BasicTransDecoderBlock(nn.Module):
 
     def __init__(self, in_ch, out_ch, heads, dim_head, attn_drop=0., proj_drop=0., reduce_size=16, projection='interp',
-                 rel_pos=True):
+                 rel_pos=True, norm_name='batch'):
         super().__init__()
 
-        self.bn_l = nn.InstanceNorm2d(in_ch)
-        self.bn_h = nn.InstanceNorm2d(out_ch)
-
+        # self.bn_l = nn.InstanceNorm2d(in_ch)
+        # self.bn_h = nn.InstanceNorm2d(out_ch)
+        self.norm_name = norm_name
         self.conv_ch = nn.Conv2d(in_ch, out_ch, kernel_size=1)
         self.attn = LinearAttentionDecoder(in_ch, out_ch, heads=heads, dim_head=out_ch // heads, attn_drop=attn_drop,
                                            proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
@@ -142,20 +143,23 @@ class BasicTransDecoderBlock(nn.Module):
     def forward(self, x1, x2):
         residue = F.interpolate(self.conv_ch(x1), size=x2.shape[-2:], mode='bilinear', align_corners=True)
         # x1: low-res, x2: high-res
-        x1 = self.bn_l(x1)
-        x2 = self.bn_h(x2)
-        # norm_x1 = nn.LayerNorm(x1.shape[1:]).to(f'cuda:{x1.get_device()}')
-        # norm_x2 = nn.LayerNorm(x2.shape[1:]).to(f'cuda:{x1.get_device()}')
-        # x1 = norm_x1(x1)
-        # x2 = norm_x2(x2)
+        # x1 = self.bn_l(x1)
+        # x2 = self.bn_h(x2)
+        # # norm_x1 = nn.LayerNorm(x1.shape[1:]).to(f'cuda:{x1.get_device()}')
+        # # norm_x2 = nn.LayerNorm(x2.shape[1:]).to(f'cuda:{x1.get_device()}')
+        # # x1 = norm_x1(x1)
+        # # x2 = norm_x2(x2)
+        x1 = norm(x1, self.norm_name)
+        x2 = norm(x2, self.norm_name)
 
         out, q_k_attn = self.attn(x2, x1)
 
         out = out + residue
         residue = out
-        out = self.bn2(out)
+        # out = self.bn2(out)
         # norm_2 = nn.LayerNorm(out.shape[1:]).to(f'cuda:{x1.get_device()}')
         # out = norm_2(out)
+        out = norm(out, self.norm_name)
         out = self.relu(out)
         out = self.mlp(out)
 
@@ -412,10 +416,10 @@ class RelativePositionBias(nn.Module):
 
 class down_block_trans(nn.Module):
     def __init__(self, in_ch, out_ch, num_block, bottleneck=False, maxpool=True, heads=4, dim_head=64, attn_drop=0.,
-                 proj_drop=0., reduce_size=16, projection='interp', rel_pos=True):
+                 proj_drop=0., reduce_size=16, projection='interp', rel_pos=True, norm_name = 'batch'):
 
         super().__init__()
-
+        self.norm_name = norm_name
         block_list = []
 
         if bottleneck:
@@ -435,7 +439,7 @@ class down_block_trans(nn.Module):
         for i in range(num_block):
             block_list.append(
                 attn_block(out_ch, heads, dim_head, attn_drop=attn_drop, proj_drop=proj_drop, reduce_size=reduce_size,
-                           projection=projection, rel_pos=rel_pos))
+                           projection=projection, rel_pos=rel_pos, norm_name=self.norm_name))
         self.blocks = nn.Sequential(*block_list)
 
     def forward(self, x):
@@ -447,12 +451,12 @@ class down_block_trans(nn.Module):
 
 class up_block_trans(nn.Module):
     def __init__(self, in_ch, out_ch, num_block, bottleneck=False, heads=4, dim_head=64, attn_drop=0., proj_drop=0.,
-                 reduce_size=16, projection='interp', rel_pos=True):
+                 reduce_size=16, projection='interp', rel_pos=True, norm_name = 'batch'):
         super().__init__()
-
+        self.norm_name = norm_name
         self.attn_decoder = BasicTransDecoderBlock(in_ch, out_ch, heads=heads, dim_head=dim_head, attn_drop=attn_drop,
                                                    proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
-                                                   rel_pos=rel_pos)
+                                                   rel_pos=rel_pos, norm_name = self.norm_name)
 
         if bottleneck:
             block = BottleneckBlock
@@ -465,7 +469,7 @@ class up_block_trans(nn.Module):
         for i in range(num_block):
             block_list.append(
                 attn_block(out_ch, heads, dim_head, attn_drop=attn_drop, proj_drop=proj_drop, reduce_size=reduce_size,
-                           projection=projection, rel_pos=rel_pos))
+                           projection=projection, rel_pos=rel_pos, norm_name=self.norm_name))
 
         block_list.append(block(2 * out_ch, out_ch, stride=1))
 

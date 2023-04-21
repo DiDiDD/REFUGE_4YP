@@ -1,10 +1,9 @@
 import time
-import numpy as np
 import json
 from glob import glob
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-from data import train_test_split
+from Run.data_aug.data import train_test_split
 from UNet_model import UNet
 from monai.losses import DiceCELoss
 from utils import *
@@ -27,15 +26,19 @@ parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_u
 parser.add_argument('norm_name', metavar='norm_name',  help='Specify a normalisation method')
 parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
 parser.add_argument('--base_c', metavar='--base_c', default = 12,type=int, help='base_channel which is the first output channel from first conv block')
-
+# swin_unetr paras
 parser.add_argument('--depth', metavar='--depth', type=str, default = '[2,2,2,2]',  help='num_depths in swin_unetr')
+parser.add_argument('--n_h', metavar='--n_h', type=str, default = '[3,6,12,24]',  help='num_heads in swin_unetr')
 
 args = parser.parse_args()
-lr, batch_size, gpu_index, model_name, norm_name, model_text = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name, args.model_text
+lr, batch_size, gpu_index, model_name, norm_name = args.lr, args.b_s, args.gpu_index, args.model, args.norm_name
 base_c = args.base_c
 depths = args.depth
 depths= json.loads(depths)
 depths = tuple(depths)
+num_heads = args.n_h
+num_heads= json.loads(num_heads)
+num_heads = tuple(num_heads)
 
 model_su = SwinUNETR(img_size = (512, 512), in_channels=3, out_channels=3,
                     depths=depths,
@@ -76,24 +79,31 @@ model_su3 = SwinUNETR_instance(img_size = (512, 512), in_channels=3, out_channel
                     spatial_dims=2,
                     downsample='merging')
 
-utnet = UTNet(in_chan=3, base_chan=base_c)
+utnet = UTNet(in_chan=3, num_classes=3, base_chan=base_c)
 
 unet = UNet(in_c=3, out_c=3, base_c=base_c, norm_name=norm_name)
 
+data_save_path = 'to be specify'
 '''select between two model'''
 if model_name == 'unet':
     model = unet
+    data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
 elif model_name == 'swin_unetr' and norm_name== 'layer':
     model = model_su
+    data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}_nd_{depths}_nh_{num_heads}/'
 elif model_name == 'swin_unetr' and norm_name == 'batch':
     model = model_su2
+    data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}_nd_{depths}_nh_{num_heads}/'
 elif model_name == 'swin_unetr' and norm_name == 'instance':
     model = model_su3
+    data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}_nd_{depths}_nh_{num_heads}/'
 elif model_name == 'utnet':
     model = utnet
+    data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
 
 
-data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'
+
+# data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'
 writer = SummaryWriter(data_save_path)
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 create_dir(data_save_path + 'Checkpoint')

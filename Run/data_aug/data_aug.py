@@ -4,7 +4,7 @@ import cv2
 from glob import glob
 from tqdm import tqdm
 from albumentations import HorizontalFlip, VerticalFlip, Rotate
-from utils import create_dir
+from Run.utils import create_dir
 
 
 def load_data(path_train_x, path_train_y, path_val_x, path_val_y, path_test_x, path_test_y):
