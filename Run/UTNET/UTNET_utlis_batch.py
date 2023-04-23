@@ -2,16 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
-from utils import norm
 import pdb
 
 
-def conv3x3(in_channels, out_channels, stride=1):
-    return nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+def conv3x3(in_planes, out_planes, stride=1):
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
 
 
-def conv1x1(in_channels, out_channels, stride=1):
-    return nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, padding=0, bias=False)
+def conv1x1(in_planes, out_planes, stride=1):
+    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, padding=0, bias=False)
 
 
 class depthwise_separable_conv(nn.Module):
@@ -51,21 +50,21 @@ class Mlp(nn.Module):
 
 class BasicBlock(nn.Module):
 
-    def __init__(self, c_in, c_out, stride=1):
+    def __init__(self, inplanes, planes, stride=1):
         super().__init__()
-        self.conv1 = conv3x3(c_in, c_out, stride)
-        self.bn1 = nn.BatchNorm2d(c_in)
+        self.conv1 = conv3x3(inplanes, planes, stride)
+        self.bn1 = nn.BatchNorm2d(inplanes)
         self.relu = nn.ReLU(inplace=True)
 
-        self.conv2 = conv3x3(c_out, c_out)
-        self.bn2 = nn.BatchNorm2d(c_out)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
-        if stride != 1 or c_in != c_out:
+        if stride != 1 or inplanes != planes:
             self.shortcut = nn.Sequential(
-                nn.BatchNorm2d(c_in),
+                nn.BatchNorm2d(inplanes),
                 self.relu,
-                nn.Conv2d(c_in, c_out, kernel_size=1, stride=stride, bias=False)
+                nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False)
             )
 
     def forward(self, x):
@@ -87,33 +86,27 @@ class BasicBlock(nn.Module):
 class BasicTransBlock(nn.Module):
 
     def __init__(self, in_ch, heads, dim_head, attn_drop=0., proj_drop=0., reduce_size=16, projection='interp',
-                 rel_pos=True, norm_name='batch'):
+                 rel_pos=True):
         super().__init__()
-        self.norm_name = norm_name
+        self.bn1 = nn.BatchNorm2d(in_ch)
+
         self.attn = LinearAttention(in_ch, heads=heads, dim_head=in_ch // heads, attn_drop=attn_drop,
                                     proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
                                     rel_pos=rel_pos)
 
+        self.bn2 = nn.BatchNorm2d(in_ch)
         self.relu = nn.ReLU(inplace=True)
         self.mlp = nn.Conv2d(in_ch, in_ch, kernel_size=1, bias=False)
         # conv1x1 has not difference with mlp in performance
 
     def forward(self, x):
-        out = norm(x, self.norm_name)
-        # out = self.bn1(x)
-        # # norm_1 = nn.LayerNorm(x.shape[1:]).to(f'cuda:{x.get_device()}')
-        # # out = norm_1(x)
-
+        out = self.bn1(x)
         out, q_k_attn = self.attn(out)
 
         out = out + x
         residue = out
 
-        out = norm(out, self.norm_name)
-        # out = self.bn2(out)
-        # norm_2 = nn.LayerNorm(out.shape[1:]).to(f'cuda:{x.get_device()}')
-        # out = norm_2(out)
-
+        out = self.bn2(out)
         out = self.relu(out)
         out = self.mlp(out)
 
@@ -125,41 +118,33 @@ class BasicTransBlock(nn.Module):
 class BasicTransDecoderBlock(nn.Module):
 
     def __init__(self, in_ch, out_ch, heads, dim_head, attn_drop=0., proj_drop=0., reduce_size=16, projection='interp',
-                 rel_pos=True, norm_name='batch'):
+                 rel_pos=True):
         super().__init__()
 
-        # self.bn_l = nn.InstanceNorm2d(in_ch)
-        # self.bn_h = nn.InstanceNorm2d(out_ch)
-        self.norm_name = norm_name
+        self.bn_l = nn.BatchNorm2d(in_ch)
+        self.bn_h = nn.BatchNorm2d(out_ch)
+
         self.conv_ch = nn.Conv2d(in_ch, out_ch, kernel_size=1)
         self.attn = LinearAttentionDecoder(in_ch, out_ch, heads=heads, dim_head=out_ch // heads, attn_drop=attn_drop,
                                            proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
                                            rel_pos=rel_pos)
 
-        self.bn2 = nn.InstanceNorm2d(out_ch)
+        self.bn2 = nn.BatchNorm2d(out_ch)
         self.relu = nn.ReLU(inplace=True)
         self.mlp = nn.Conv2d(out_ch, out_ch, kernel_size=1, bias=False)
 
     def forward(self, x1, x2):
         residue = F.interpolate(self.conv_ch(x1), size=x2.shape[-2:], mode='bilinear', align_corners=True)
         # x1: low-res, x2: high-res
-        # x1 = self.bn_l(x1)
-        # x2 = self.bn_h(x2)
-        # # norm_x1 = nn.LayerNorm(x1.shape[1:]).to(f'cuda:{x1.get_device()}')
-        # # norm_x2 = nn.LayerNorm(x2.shape[1:]).to(f'cuda:{x1.get_device()}')
-        # # x1 = norm_x1(x1)
-        # # x2 = norm_x2(x2)
-        x1 = norm(x1, self.norm_name)
-        x2 = norm(x2, self.norm_name)
+        x1 = self.bn_l(x1)
+        x2 = self.bn_h(x2)
 
         out, q_k_attn = self.attn(x2, x1)
 
         out = out + residue
         residue = out
-        # out = self.bn2(out)
-        # norm_2 = nn.LayerNorm(out.shape[1:]).to(f'cuda:{x1.get_device()}')
-        # out = norm_2(out)
-        out = norm(out, self.norm_name)
+
+        out = self.bn2(out)
         out = self.relu(out)
         out = self.mlp(out)
 
@@ -173,7 +158,7 @@ class BasicTransDecoderBlock(nn.Module):
 
 class LinearAttention(nn.Module):
 
-    def __init__(self, in_c, heads=4, dim_head=64, attn_drop=0., proj_drop=0., reduce_size=16, projection='interp',
+    def __init__(self, dim, heads=4, dim_head=64, attn_drop=0., proj_drop=0., reduce_size=16, projection='interp',
                  rel_pos=True):
         super().__init__()
 
@@ -189,15 +174,15 @@ class LinearAttention(nn.Module):
         # self.to_qkv = nn.Conv2d(dim, self.inner_dim*3, kernel_size=1, stride=1, padding=0, bias=True)
         # self.to_out = nn.Conv2d(self.inner_dim, dim, kernel_size=1, stride=1, padding=0, bias=True)
 
-        self.to_qkv = depthwise_separable_conv(in_c, self.inner_dim * 3)
-        self.to_out = depthwise_separable_conv(self.inner_dim, in_c)
+        self.to_qkv = depthwise_separable_conv(dim, self.inner_dim * 3)
+        self.to_out = depthwise_separable_conv(self.inner_dim, dim)
 
         self.attn_drop = nn.Dropout(attn_drop)
         self.proj_drop = nn.Dropout(proj_drop)
 
         if self.rel_pos:
             # 2D input-independent relative position encoding is a little bit better than
-            # 1D input-dependent counterpart
+            # 1D input-denpendent counterpart
             self.relative_position_encoding = RelativePositionBias(heads, reduce_size, reduce_size)
             # self.relative_position_encoding = RelativePositionEmbedding(dim_head, reduce_size)
 
@@ -379,7 +364,8 @@ class RelativePositionBias(nn.Module):
         self.h = h
         self.w = w
 
-        self.relative_position_bias_table = nn.Parameter(torch.randn((2 * h - 1) * (2 * w - 1), num_heads) * 0.02)
+        self.relative_position_bias_table = nn.Parameter(
+            torch.randn((2 * h - 1) * (2 * w - 1), num_heads) * 0.02)
 
         coords_h = torch.arange(self.h)
         coords_w = torch.arange(self.w)
@@ -406,7 +392,8 @@ class RelativePositionBias(nn.Module):
 
         relative_position_bias_expanded = relative_position_bias_expanded.view(H * W, self.h * self.w,
                                                                                self.num_heads).permute(2, 0,
-                                                                                                       1).contiguous().unsqueeze(0)
+                                                                                                       1).contiguous().unsqueeze(
+            0)
 
         return relative_position_bias_expanded
 
@@ -416,10 +403,10 @@ class RelativePositionBias(nn.Module):
 
 class down_block_trans(nn.Module):
     def __init__(self, in_ch, out_ch, num_block, bottleneck=False, maxpool=True, heads=4, dim_head=64, attn_drop=0.,
-                 proj_drop=0., reduce_size=16, projection='interp', rel_pos=True, norm_name = 'batch'):
+                 proj_drop=0., reduce_size=16, projection='interp', rel_pos=True):
 
         super().__init__()
-        self.norm_name = norm_name
+
         block_list = []
 
         if bottleneck:
@@ -439,7 +426,7 @@ class down_block_trans(nn.Module):
         for i in range(num_block):
             block_list.append(
                 attn_block(out_ch, heads, dim_head, attn_drop=attn_drop, proj_drop=proj_drop, reduce_size=reduce_size,
-                           projection=projection, rel_pos=rel_pos, norm_name=self.norm_name))
+                           projection=projection, rel_pos=rel_pos))
         self.blocks = nn.Sequential(*block_list)
 
     def forward(self, x):
@@ -451,12 +438,12 @@ class down_block_trans(nn.Module):
 
 class up_block_trans(nn.Module):
     def __init__(self, in_ch, out_ch, num_block, bottleneck=False, heads=4, dim_head=64, attn_drop=0., proj_drop=0.,
-                 reduce_size=16, projection='interp', rel_pos=True, norm_name = 'batch'):
+                 reduce_size=16, projection='interp', rel_pos=True):
         super().__init__()
-        self.norm_name = norm_name
+
         self.attn_decoder = BasicTransDecoderBlock(in_ch, out_ch, heads=heads, dim_head=dim_head, attn_drop=attn_drop,
                                                    proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
-                                                   rel_pos=rel_pos, norm_name = self.norm_name)
+                                                   rel_pos=rel_pos)
 
         if bottleneck:
             block = BottleneckBlock
@@ -469,7 +456,7 @@ class up_block_trans(nn.Module):
         for i in range(num_block):
             block_list.append(
                 attn_block(out_ch, heads, dim_head, attn_drop=attn_drop, proj_drop=proj_drop, reduce_size=reduce_size,
-                           projection=projection, rel_pos=rel_pos, norm_name=self.norm_name))
+                           projection=projection, rel_pos=rel_pos))
 
         block_list.append(block(2 * out_ch, out_ch, stride=1))
 
@@ -533,6 +520,8 @@ class down_block(nn.Module):
         return self.conv(x)
 
 
+
+
 class up_block(nn.Module):
     def __init__(self, in_ch, out_ch, num_block, scale=(2,2),bottleneck=False):
         super().__init__()
@@ -569,19 +558,19 @@ class BottleneckBlock(nn.Module):
     def __init__(self, inplanes, planes, stride=1):
         super().__init__()
         self.conv1 = conv1x1(inplanes, planes//4, stride=1)
-        self.bn1 = nn.InstanceNorm2d(inplanes)
+        self.bn1 = nn.BatchNorm2d(inplanes)
         self.relu = nn.ReLU(inplace=True)
 
         self.conv2 = conv3x3(planes//4, planes//4, stride=stride)
-        self.bn2 = nn.InstanceNorm2d(planes//4)
+        self.bn2 = nn.BatchNorm2d(planes//4)
 
         self.conv3 = conv1x1(planes//4, planes, stride=1)
-        self.bn3 = nn.InstanceNorm2d(planes//4)
+        self.bn3 = nn.BatchNorm2d(planes//4)
 
         self.shortcut = nn.Sequential()
         if stride != 1 or inplanes != planes:
             self.shortcut = nn.Sequential(
-                    nn.InstanceNorm2d(inplanes),
+                    nn.BatchNorm2d(inplanes),
                     self.relu,
                     nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False)
                     )

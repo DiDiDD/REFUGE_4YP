@@ -3,7 +3,11 @@ import numpy as np
 import cv2
 from glob import glob
 from tqdm import tqdm
-from utils import create_dir
+
+
+def create_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 def load_data(path_test_x):

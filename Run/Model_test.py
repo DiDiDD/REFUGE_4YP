@@ -1,17 +1,17 @@
-from data import train_test_split
+from data_aug.data import train_test_split
 import numpy as np
 from glob import glob
 import cv2
 from tqdm import tqdm
 import torch
-from UNet_model import UNet
+from Run.UNET.UNet_model import UNet
 from utils import create_dir, segmentation_score, mask_parse
 import argparse
 from torch.utils.tensorboard import SummaryWriter
-from UTNET_model import UTNet
+from Run.UTNET._UTNET_model import UTNet
 from monai.networks.nets import SwinUNETR
-from swin_unetr_model_with_batch_in_trans import SwinUNETR_batch
-from swin_unetr_model_with_instance import SwinUNETR_instance
+from Run.Swin_UNETR.swin_unetr_model_with_batch_in_trans import SwinUNETR_batch
+from Run.Swin_UNETR.swin_unetr_model_with_instance import SwinUNETR_instance
 import json
 
 parser = argparse.ArgumentParser(description='Specify Parameters')
