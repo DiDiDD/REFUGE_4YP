@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from UTNET_utlis_batch import *
+from UTNET.UTNET_utlis_batch import *
 
 import pdb
 
@@ -9,7 +9,7 @@ class UTNet_batch(nn.Module):
 
     def __init__(self, in_chan, base_chan, num_classes=1, reduce_size=8, block_list='234', num_blocks=[1, 2, 4],
                  projection='interp', num_heads=[2, 4, 8], attn_drop=0., proj_drop=0., bottleneck=False, maxpool=True,
-                 rel_pos=True, aux_loss=False):
+                 rel_pos=True, aux_loss=False, norm_name='batch'):
         super().__init__()
 
         self.aux_loss = aux_loss
@@ -214,9 +214,3 @@ class UTNet_Encoderonly(nn.Module):
             out = self.outc(out)
 
             return out
-
-
-x = torch.rand((1,1,128,128))
-model = UTNet(in_chan=1, num_classes=3, base_chan=2)
-y = model(x)
-print(y.shape)

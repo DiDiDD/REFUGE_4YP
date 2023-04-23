@@ -4,14 +4,14 @@ from glob import glob
 import cv2
 from tqdm import tqdm
 import torch
-from Run.UNET.UNet_model import UNet
+from UNET.UNet_model import UNet
 from utils import create_dir, segmentation_score, mask_parse
 import argparse
 from torch.utils.tensorboard import SummaryWriter
-from Run.UTNET._UTNET_model import UTNet
+from UTNET._UTNET_model import UTNet
 from monai.networks.nets import SwinUNETR
-from Run.Swin_UNETR.swin_unetr_model_with_batch_in_trans import SwinUNETR_batch
-from Run.Swin_UNETR.swin_unetr_model_with_instance import SwinUNETR_instance
+from Swin_UNETR.swin_unetr_model_with_batch_in_trans import SwinUNETR_batch
+from Swin_UNETR.swin_unetr_model_with_instance import SwinUNETR_instance
 import json
 
 parser = argparse.ArgumentParser(description='Specify Parameters')

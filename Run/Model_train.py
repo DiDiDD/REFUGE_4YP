@@ -13,6 +13,7 @@ from Run.Swin_UNETR.swin_unetr_model_with_batch_in_trans import SwinUNETR_batch
 from Run.Swin_UNETR.swin_unetr_model_with_instance import SwinUNETR_instance
 import argparse
 from torch.utils.tensorboard import SummaryWriter
+from UTNET._UTNET_model import UTNet
 from UTNET.UTNET_batch import UTNet_batch
 from UTNET.UTNET_instance import UTNet_instance
 from UTNET.UTNET_layer import UTNet_layer

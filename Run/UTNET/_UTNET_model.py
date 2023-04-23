@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from _UTNET_utlis import *
+from UTNET._UTNET_utlis import *
 
 import pdb
 
@@ -212,8 +212,3 @@ class UTNet_Encoderonly(nn.Module):
             out = self.outc(out)
 
             return out
-
-x = torch.rand((1,1,128,128))
-model = UTNet(in_chan=1, num_classes=3, base_chan=2)
-y = model(x)
-print(y.shape)
