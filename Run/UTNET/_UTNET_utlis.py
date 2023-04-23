@@ -93,6 +93,8 @@ class BasicTransBlock(nn.Module):
         self.bn2 = nn.BatchNorm2d(in_ch)
         self.itn1 = nn.InstanceNorm2d(in_ch)
         self.itn2 = nn.InstanceNorm2d(in_ch)
+        self.ln1 = nn.LayerNorm
+        self.ln2 = nn.LayerNorm
         self.attn = LinearAttention(in_ch, heads=heads, dim_head=in_ch // heads, attn_drop=attn_drop,
                                     proj_drop=proj_drop, reduce_size=reduce_size, projection=projection,
                                     rel_pos=rel_pos)
@@ -108,7 +110,7 @@ class BasicTransBlock(nn.Module):
         elif self.norm_name == 'instance':
             out = self.itn1(x)
         elif self.norm_name == 'layer':
-            norm_1 = nn.LayerNorm(x.shape[1:]).to(f'cuda:{x.get_device()}')
+            norm_1 = self.ln1(x.shape[1:])#.to(f'cuda:{x.get_device()}')
             out = norm_1(x)
 
         out, q_k_attn = self.attn(out)
@@ -122,7 +124,7 @@ class BasicTransBlock(nn.Module):
         elif self.norm_name == 'instance':
             out = self.itn2(out)
         elif self.norm_name == 'layer':
-            norm_2 = nn.LayerNorm(out.shape[1:]).to(f'cuda:{x.get_device()}')
+            norm_2 = self.ln2(out.shape[1:])#.to(f'cuda:{x.get_device()}')
             out = norm_2(out)
 
         out = self.relu(out)
@@ -142,7 +144,9 @@ class BasicTransDecoderBlock(nn.Module):
         self.bn_l = nn.BatchNorm2d(in_ch)
         self.bn_h = nn.BatchNorm2d(out_ch)
         self.itn_l = nn.InstanceNorm2d(in_ch)
-        self.it_h = nn.InstanceNorm2d(out_ch)
+        self.itn_h = nn.InstanceNorm2d(out_ch)
+        self.ln_l = nn.LayerNorm
+        self.ln_h = nn.LayerNorm
         self.norm_name = norm_name
         self.conv_ch = nn.Conv2d(in_ch, out_ch, kernel_size=1)
         self.attn = LinearAttentionDecoder(in_ch, out_ch, heads=heads, dim_head=out_ch // heads, attn_drop=attn_drop,
@@ -151,6 +155,7 @@ class BasicTransDecoderBlock(nn.Module):
 
         self.bn2 = nn.BatchNorm2d(out_ch)
         self.itn2 = nn.InstanceNorm2d(out_ch)
+        self.ln2 = nn.LayerNorm
         self.relu = nn.ReLU(inplace=True)
         self.mlp = nn.Conv2d(out_ch, out_ch, kernel_size=1, bias=False)
 
@@ -164,8 +169,8 @@ class BasicTransDecoderBlock(nn.Module):
             x1 = self.itn_l(x1)
             x2 = self.itn_h(x2)
         elif self.norm_name == 'layer':
-            norm_x1 = nn.LayerNorm(x1.shape[1:]).to(f'cuda:{x1.get_device()}')
-            norm_x2 = nn.LayerNorm(x2.shape[1:]).to(f'cuda:{x1.get_device()}')
+            norm_x1 = self.ln_l(x1.shape[1:])#.to(f'cuda:{x1.get_device()}')
+            norm_x2 = self.ln_h(x2.shape[1:])#.to(f'cuda:{x1.get_device()}')
             x1 = norm_x1(x1)
             x2 = norm_x2(x2)
 
@@ -179,7 +184,7 @@ class BasicTransDecoderBlock(nn.Module):
         elif self.norm_name == 'instance':
             out = self.itn2(out)
         elif self.norm_name == 'layer':
-            norm_2 = nn.LayerNorm(out.shape[1:]).to(f'cuda:{x1.get_device()}')
+            norm_2 = self.ln2(out.shape[1:])#.to(f'cuda:{x1.get_device()}')
             out = norm_2(out)
 
         out = self.relu(out)
