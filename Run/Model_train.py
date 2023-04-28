@@ -3,20 +3,20 @@ import json
 from glob import glob
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-from Run.data_aug.data import train_test_split
-from Run.UNET.UNet_model import UNet
+from data_aug.data import train_test_split
+from UNET.UNet_model import UNet
 from monai.losses import DiceCELoss
 from utils import *
 import torch
 from monai.networks.nets import SwinUNETR
-from Run.Swin_UNETR.swin_unetr_model_with_batch_in_trans import SwinUNETR_batch
-from Run.Swin_UNETR.swin_unetr_model_with_instance import SwinUNETR_instance
+from Swin_UNETR.swin_unetr_model_with_batch_in_trans import SwinUNETR_batch
+from Swin_UNETR.swin_unetr_model_with_instance import SwinUNETR_instance
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 from UTNET._UTNET_model import UTNet
-from UTNET.UTNET_batch import UTNet_batch
-from UTNET.UTNET_instance import UTNet_instance
-from UTNET.UTNET_layer import UTNet_layer
+# from UTNET.UTNET_batch import UTNet_batch
+# from UTNET.UTNET_instance import UTNet_instance
+# from UTNET.UTNET_layer import UTNet_layer
 
 parser = argparse.ArgumentParser(description='Specify Parameters')
 
@@ -26,7 +26,7 @@ parser.add_argument('gpu_index', metavar='gpu_index', type=int, help='Specify wh
 parser.add_argument('model', metavar='model', type=str, choices=['unet', 'swin_unetr', 'utnet'], help='Specify a model')
 
 parser.add_argument('norm_name', metavar='norm_name',  help='Specify a normalisation method')
-parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
+# parser.add_argument('model_text', metavar='model_text', type=str, help='Describe your mode')
 parser.add_argument('--base_c', metavar='--base_c', default = 12,type=int, help='base_channel which is the first output channel from first conv block')
 # swin_unetr paras
 parser.add_argument('--depth', metavar='--depth', type=str, default = '[2,2,2,2]',  help='num_depths in swin_unetr')
@@ -81,9 +81,9 @@ model_su3 = SwinUNETR_instance(img_size = (512, 512), in_channels=3, out_channel
                     spatial_dims=2,
                     downsample='merging')
 
-utnet_batch = UTNet_batch(in_chan=3, num_classes=3, base_chan=base_c)
-utnet_instance = UTNet_instance(in_chan=3, num_classes=3, base_chan=base_c)
-utnet_layer = UTNet_layer(in_chan=3, num_classes=3, base_chan=base_c)
+utnet = UTNet(in_chan=3, num_classes=3, base_chan=base_c)
+# utnet_instance = UTNet_instance(in_chan=3, num_classes=3, base_chan=base_c)
+# utnet_layer = UTNet_layer(in_chan=3, num_classes=3, base_chan=base_c)
 
 unet = UNet(in_c=3, out_c=3, base_c=base_c, norm_name=norm_name)
 
@@ -101,19 +101,19 @@ elif model_name == 'swin_unetr' and norm_name == 'batch':
 elif model_name == 'swin_unetr' and norm_name == 'instance':
     model = model_su3
     data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}_nd_{depths}_nh_{num_heads}/'
-elif model_name == 'utnet' and norm_name == 'batch':
-    model = utnet_batch
+elif model_name == 'utnet':
+    model = utnet
     data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
-elif model_name == 'utnet' and norm_name == 'instance':
-    model = utnet_instance
-    data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
-elif model_name == 'utnet' and norm_name == 'layer':
-    model = utnet_layer
-    data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
+# elif model_name == 'utnet' and norm_name == 'instance':
+#     model = utnet_instance
+#     data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
+# elif model_name == 'utnet' and norm_name == 'layer':
+#     model = utnet_layer
+#     data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
 
 
 # data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'
-writer = SummaryWriter(data_save_path)
+writer = SummaryWriter(data_save_path, comment = '_training')
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 create_dir(data_save_path + 'Checkpoint')
 

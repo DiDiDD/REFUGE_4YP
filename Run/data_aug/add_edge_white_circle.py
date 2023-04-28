@@ -16,7 +16,7 @@ def load_data(path_test_x):
 
 
 def draw_white_circle(image):
-    center_coordinates = tuple(np.random.randint(low=340, high=350, size=2, dtype=int))
+    center_coordinates = (480, 250)
     axesLength = tuple(np.random.randint(low=20, high=37, size=2, dtype=int))
     angle = np.random.randint(low=0, high=180, size=1, dtype=int).item()
     startAngle = 0
@@ -31,7 +31,7 @@ def draw_white_circle(image):
 
 if __name__ == "__main__":
     processed_test_x_path = "/home/mans4021/Desktop/new_data/REFUGE2/test/image/"
-    path_to_save_newdata = "/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_corner_white_circle/"
+    path_to_save_newdata = "/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_edge_white_circle/"
     create_dir(path_to_save_newdata)
     test_x = load_data(processed_test_x_path)
 

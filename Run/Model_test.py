@@ -15,6 +15,7 @@ from Swin_UNETR.swin_unetr_model_with_instance import SwinUNETR_instance
 import json
 
 parser = argparse.ArgumentParser(description='Specify Parameters')
+
 parser.add_argument('test_data', metavar='test_data', type=int, help='Specify which test_data')
 parser.add_argument('lr', metavar='lr', type=float, help='Specify learning rate')
 parser.add_argument('b_s', metavar='b_s', type=int, help='Specify bach size')
@@ -103,7 +104,7 @@ elif model_name == 'utnet':
 
 '''Tensorboard'''
 # data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'
-writer = SummaryWriter(data_save_path)
+writer = SummaryWriter(data_save_path, comment = f'_set{test_data_num}')
 
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 create_dir(data_save_path+'results/')
@@ -117,6 +118,8 @@ if __name__ == "__main__":
         test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_center_white_circle/*"))
     elif test_data_num == 2:
         test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_corner_white_circle/*"))
+    elif test_data_num == 3:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_edge_white_circle/*"))
 
     test_dataset = train_test_split(test_x, test_y)
     dataset_size = len(test_x)
