@@ -3,6 +3,7 @@ import random
 import numpy as np
 import torch
 import torch.nn as nn
+from glob import glob
 
 def seeding(seed):  # seeding the randomness
     random.seed(seed)
@@ -119,3 +120,46 @@ def get_lr(step, lr):
         lr_ = lr + lr * np.cos(2 * np.pi * step / 100)
 
     return lr_
+
+
+def choose_test_set(test_data_num):
+    test_x = 'nothing'
+    if test_data_num == 0:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image/*"))
+    elif test_data_num == 1:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_center_white_circle/*"))
+    elif test_data_num == 2:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_corner_white_circle/*"))
+    elif test_data_num == 3:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_edge_white_circle/*"))
+    elif test_data_num == 4:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_r_1.1/*"))
+    elif test_data_num == 5:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_r_1.2/*"))
+    elif test_data_num == 6:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_r_1.3/*"))
+    elif test_data_num == 7:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_r_1.4/*"))
+    elif test_data_num == 8:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_r_1.5/*"))
+    elif test_data_num == 9:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_g_1.1/*"))
+    elif test_data_num == 10:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_g_1.2/*"))
+    elif test_data_num == 11:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_g_1.3/*"))
+    elif test_data_num == 12:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_g_1.4/*"))
+    elif test_data_num == 13:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_g_1.5/*"))
+    elif test_data_num == 14:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_b_1.1/*"))
+    elif test_data_num == 15:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_b_1.2/*"))
+    elif test_data_num == 16:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_b_1.3/*"))
+    elif test_data_num == 17:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_b_1.4/*"))
+    elif test_data_num == 18:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_b_1.5/*"))
+

@@ -5,7 +5,7 @@ import cv2
 from tqdm import tqdm
 import torch
 from UNET.UNet_model import UNet
-from utils import create_dir, segmentation_score, mask_parse
+from utils import create_dir, segmentation_score, mask_parse, choose_test_set
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 from UTNET._UTNET_model import UTNet
@@ -107,19 +107,12 @@ elif model_name == 'utnet':
 writer = SummaryWriter(data_save_path, comment = f'_set{test_data_num}')
 
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
-create_dir(data_save_path+'results/')
+create_dir(data_save_path+f'results{test_data_num}/')
 
 if __name__ == "__main__":
     """ Load dataset """
     test_y = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/mask/*"))
-    if test_data_num == 0:
-        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image/*"))
-    elif test_data_num == 1:
-        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_center_white_circle/*"))
-    elif test_data_num == 2:
-        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_corner_white_circle/*"))
-    elif test_data_num == 3:
-        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_with_edge_white_circle/*"))
+    test_x = choose_test_set(test_data_num)
 
     test_dataset = train_test_split(test_x, test_y)
     dataset_size = len(test_x)
