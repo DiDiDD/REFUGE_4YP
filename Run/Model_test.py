@@ -152,19 +152,58 @@ if __name__ == "__main__":
             cv2.imwrite(data_save_path+f'results{test_data_num}/{i}.png', cat_images)
 
     np.save(data_save_path+f'test_score_{test_data_num}', metrics_score)
+    
     f1_record = metrics_score[:, :, 1]
     f1_mean = metrics_score.mean(axis=0)
     f1_std = np.std(f1_record, axis=0)
 
-    f1_report_str = data_save_path + ' test results are:'
-    f1_report_str += f'\nBackground F1 score is {f1_mean[0,1]:4f} +- {f1_std[0]:4f}'
-    f1_report_str += f'\nOuter Ring F1 score is {f1_mean[1,1]:4f} +- {f1_std[1]:4f}'
-    f1_report_str += f'\nCup F1 score is {f1_mean[2,1]:4f} +- {f1_std[2]:4f}'
-    f1_report_str += f'\nDisc F1 score is {f1_mean[3,1]:4f} +- {f1_std[3]:4f}'
-    writer.add_text('Test f1 score', f1_report_str)
+    iou_record = metrics_score[:, :, 0]
+    iou_mean = metrics_score.mean(axis=0)
+    iou_std = np.std(f1_record, axis=0)
+
+    recall_record = metrics_score[:, :, 2]
+    recall_mean = metrics_score.mean(axis=0)
+    recall_std = np.std(f1_record, axis=0)
+
+    precison_record = metrics_score[:, :, 3]
+    precision_mean = metrics_score.mean(axis=0)
+    precision_std = np.std(f1_record, axis=0)
+
+    accuracy_record = metrics_score[:, :, 4]
+    accuracy_mean = metrics_score.mean(axis=0)
+    accuracy_std = np.std(f1_record, axis=0)
+
+    test_report_str = data_save_path + f' test results {test_data_num} are:'
+    # test_report_str += f'\nBackground F1 score is {f1_mean[0,1]:3f} +- {f1_std[0]:3f}'
+    test_report_str += f'\nOuter Ring F1 score is {f1_mean[1,1]:3f} +- {f1_std[1]:3f}'
+    test_report_str += f'\nCup F1 score is {f1_mean[2,1]:3f} +- {f1_std[2]:3f}'
+    test_report_str += f'\nDisc F1 score is {f1_mean[3,1]:3f} +- {f1_std[3]:3f}'
+    
+    test_report_str += f'\nOuter Ring recall score is {recall_mean[1,2]:3f} +- {recall_std[1]:3f}'
+    test_report_str += f'\nCup recall score is {recall_mean[2,2]:3f} +- {recall_std[2]:3f}'
+    test_report_str += f'\nDisc recall score is {recall_mean[3,2]:3f} +- {recall_std[3]:3f}'
+    
+    test_report_str += f'\nOuter Ring precision score is {precision_mean[1,3]:3f} +- {precision_std[1]:3f}'
+    test_report_str += f'\nCup precision score is {precision_mean[2,3]:3f} +- {precision_std[2]:3f}'
+    test_report_str += f'\nDisc precision score is {precision_mean[3,3]:3f} +- {precision_std[3]:3f}'
+    
+    test_report_str += f'\nOuter Ring IOU score is {iou_mean[1,0]:3f} +- {iou_std[1]:3f}'
+    test_report_str += f'\nCup IOU score is {iou_mean[2,0]:3f} +- {iou_std[2]:3f}'
+    test_report_str += f'\nDisc IOU score is {iou_mean[3,0]:3f} +- {iou_std[3]:3f}'
+    
+    test_report_str += f'\nOuter Ring accuracy score is {accuracy_mean[1,4]:3f} +- {accuracy_std[1]:3f}'
+    test_report_str += f'\nCup accuracy score is {accuracy_mean[2,4]:3f} +- {accuracy_std[2]:3f}'
+    test_report_str += f'\nDisc accuracy score is {accuracy_mean[3,4]:3f} +- {accuracy_std[3]:3f}'
+    
+    writer.add_text('Test f1 score', test_report_str)
     for i in range(4):
-        writer.add_scalar(f'Test F1 score {test_data_num}', f1_mean[i,1], i)
-    print(f1_report_str)
+        writer.add_scalars(f'Test score {test_data_num}', {f'Test F1 score {test_data_num}': f1_mean[i,1],
+        f'Test IOU score {test_data_num}': iou_mean[i, 1],
+        f'Test recall score {test_data_num}': recall_mean[i, 1],
+        f'Test precision score {test_data_num}': precision_mean[i, 1],
+        f'Test Accuracy score {test_data_num}': accuracy_mean[i, 1]},
+        i)
+    print(test_report_str)
 writer.flush()
 writer.close()
 

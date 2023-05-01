@@ -14,9 +14,6 @@ from Swin_UNETR.swin_unetr_model_with_instance import SwinUNETR_instance
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 from UTNET._UTNET_model import UTNet
-# from UTNET.UTNET_batch import UTNet_batch
-# from UTNET.UTNET_instance import UTNet_instance
-# from UTNET.UTNET_layer import UTNet_layer
 
 parser = argparse.ArgumentParser(description='Specify Parameters')
 
@@ -82,8 +79,6 @@ model_su3 = SwinUNETR_instance(img_size = (512, 512), in_channels=3, out_channel
                     downsample='merging')
 
 utnet = UTNet(in_chan=3, num_classes=3, base_chan=base_c)
-# utnet_instance = UTNet_instance(in_chan=3, num_classes=3, base_chan=base_c)
-# utnet_layer = UTNet_layer(in_chan=3, num_classes=3, base_chan=base_c)
 
 unet = UNet(in_c=3, out_c=3, base_c=base_c, norm_name=norm_name)
 
@@ -104,15 +99,7 @@ elif model_name == 'swin_unetr' and norm_name == 'instance':
 elif model_name == 'utnet':
     model = utnet
     data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
-# elif model_name == 'utnet' and norm_name == 'instance':
-#     model = utnet_instance
-#     data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
-# elif model_name == 'utnet' and norm_name == 'layer':
-#     model = utnet_layer
-#     data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_name}_{norm_name}_lr_{lr}_bs_{batch_size}_fs_{base_c}/'
 
-
-# data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'
 writer = SummaryWriter(data_save_path, comment = '_training')
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 create_dir(data_save_path + 'Checkpoint')
