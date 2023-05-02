@@ -197,7 +197,12 @@ if __name__ == "__main__":
     
     writer.add_text('Test f1 score', test_report_str)
     for i in range(4):
-        writer.add_scalars(f'Test score {test_data_num}', {f'Test F1 score {test_data_num}': f1_mean[i,1],
+        if test_data_num < 4:
+            test_data_num_set = test_data_num
+        else:
+            test_data_num_set = 4
+
+        writer.add_scalars(f'Test score {test_data_num_set}', {f'Test F1 score {test_data_num}': f1_mean[i,1],
         f'Test IOU score {test_data_num}': iou_mean[i, 1],
         f'Test recall score {test_data_num}': recall_mean[i, 1],
         f'Test precision score {test_data_num}': precision_mean[i, 1],
