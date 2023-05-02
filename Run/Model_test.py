@@ -197,7 +197,7 @@ if __name__ == "__main__":
     
     writer.add_text('Test f1 score', test_report_str)
     for i in range(4):
-        if test_data_num < 4:
+        if test_data_num < 4 and test_data_num >18:
             test_data_num_set = test_data_num
         else:
             test_data_num_set = 4

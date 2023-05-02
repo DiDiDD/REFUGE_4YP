@@ -5,8 +5,8 @@ from tqdm import tqdm
 import os
 
 
-images0 = sorted(glob(os.path.join('/Users/diwan/Desktop/images/image/', '*.jpg')))
-images1 = sorted(glob(os.path.join('/Users/diwan/Desktop/images/image-2/', '*.jpg')))
+images0 = sorted(glob(os.path.join('/home/mans4021/Desktop/new_data/REFUGE2/train/image/', '*.jpg')))
+images1 = sorted(glob(os.path.join('/home/mans4021/Desktop/new_data/REFUGE2/test/image', '*.jpg')))
 
 hist_avg_b = np.zeros(256)
 hist_avg_g = np.zeros(256)
@@ -77,7 +77,7 @@ for ii in tqdm(images1):
     # Display the results
 
     tmp_image_name = f"{name}_{index}.jpg"
-    image_path = os.path.join('/Users/diwan/Desktop/images/image_match/', tmp_image_name)
+    image_path = os.path.join('/home/mans4021/Desktop/new_data/REFUGE2/test/image_match/', tmp_image_name)
     cv2.imwrite(image_path, img1_matched)
     index+=1
 
