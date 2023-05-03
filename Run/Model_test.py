@@ -104,10 +104,10 @@ elif model_name == 'utnet':
 
 '''Tensorboard'''
 # data_save_path = f'/home/mans4021/Desktop/new_data/REFUGE2/test/1600_{model_text}_{norm_name}_lr_{lr}_bs_{batch_size}/'
-writer = SummaryWriter(data_save_path, comment = f'_set{test_data_num}')
 
 device = torch.device(f'cuda:{gpu_index}' if torch.cuda.is_available() else 'cpu')
 create_dir(data_save_path+f'results{test_data_num}/')
+writer = SummaryWriter(data_save_path, comment = f'_set{test_data_num}')
 
 if __name__ == "__main__":
     """ Load dataset """
@@ -149,9 +149,10 @@ if __name__ == "__main__":
             line = np.ones((512, 20, 3)) * 255  # white line
             '''Create image for us to analyse visually '''
             cat_images = np.concatenate([image.squeeze().permute(1, 2, 0).cpu().numpy(), line, ori_mask, line, pred_mask], axis=1)
-            cv2.imwrite(data_save_path+f'results{test_data_num}/{i}.png', cat_images)
+            if i%10==0:
+                cv2.imwrite(data_save_path+f'results{test_data_num}/{i}.png', cat_images)
 
-    np.save(data_save_path+f'test_score_{test_data_num}', metrics_score)
+    np.save(data_save_path+f'results{test_data_num}/'+f'test_score_{test_data_num}', metrics_score)
     
     f1_record = metrics_score[:, :, 1]
     f1_mean = metrics_score.mean(axis=0)
@@ -197,17 +198,17 @@ if __name__ == "__main__":
     
     writer.add_text('Test f1 score', test_report_str)
     for i in range(4):
-        if test_data_num < 4 and test_data_num >18:
-            test_data_num_set = test_data_num
-        else:
-            test_data_num_set = 4
+    #     if test_data_num < 4 or test_data_num >18:
+    #         test_data_num_set = test_data_num
+    #     else:
+    #         test_data_num_set = 4
 
-        writer.add_scalars(f'Test score {test_data_num_set}', {f'Test F1 score {test_data_num}': f1_mean[i,1],
-        f'Test IOU score {test_data_num}': iou_mean[i, 1],
-        f'Test recall score {test_data_num}': recall_mean[i, 1],
-        f'Test precision score {test_data_num}': precision_mean[i, 1],
-        f'Test Accuracy score {test_data_num}': accuracy_mean[i, 1]},
-        i)
+        writer.add_scalar(f'Test score {test_data_num}', f1_mean[i,1], i)
+        # f'Test IOU score {test_data_num}': iou_mean[i, 0],
+        # f'Test recall score {test_data_num}': recall_mean[i, 2],
+        # f'Test precision score {test_data_num}': precision_mean[i, 3],
+        # f'Test Accuracy score {test_data_num}': accuracy_mean[i, 4]},
+        # i)
     print(test_report_str)
 writer.flush()
 writer.close()
