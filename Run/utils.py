@@ -164,3 +164,5 @@ def choose_test_set(test_data_num):
         test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image in change/image_b_1.5/*"))
     elif test_data_num == 19:
         test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/image_match/*"))
+    elif test_data_num == 20:
+        test_x = sorted(glob("/home/mans4021/Desktop/new_data/REFUGE2/test/greenlight/*"))
