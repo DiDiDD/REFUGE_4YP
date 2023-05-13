@@ -1,11 +1,12 @@
 import subprocess
 import time
+from tqdm import tqdm
 
 # replace "commands.txt" with the name of your text file
-with open("test_command.txt", "r") as f:
+with open("test_commands.txt", "r") as f:
     command_lines = f.read().split("\n\n")
 
-for ii in range(20):
+for ii in tqdm(range(20)):
 # split the command blocks into pairs of commands
     command_liness = [c.strip().format(test_num=ii) for c in command_lines]
 

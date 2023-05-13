@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from _UTNET_utlis import *
+from UTNET._UTNET_utlis import *
 
 import pdb
 
