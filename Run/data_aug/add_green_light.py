@@ -24,7 +24,7 @@ for index,(x, y) in tqdm(enumerate(zip(images, masks))):
         random_number = random.randint(1,10)
         # print(background[0][i], background[1][i])
         if ((background[0][i]-256)**2 + (background[1][i]-240)**2) > 210**2 and ((background[0][i]-256)**2 + (background[1][i]-256)**2 )<=245**2:
-            x[background[0][i], background[1][i], 2] /= 1.2
+            x[background[0][i], background[1][i], 2] *= 1.2
             x[background[0][i], background[1][i], 2].round()
             x[background[0][i], background[1][i], 1] = x[background[0][i], background[1][i], 2]+random_number
             x[background[0][i], background[1][i], 0] = x[background[0][i], background[1][i], 2]//2
