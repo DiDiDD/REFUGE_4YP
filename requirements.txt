@@ -1,0 +1,14 @@
+python==3.10.9
+einops
+pytorch==1.13.1
+numpy
+torchvision
+tensorboard
+pandas
+opencv
+glob
+albumentations
+tqdm
+monai
+argparse
+json
