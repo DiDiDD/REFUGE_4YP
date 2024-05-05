@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
-import pdb
 
 
 def conv3x3(in_channels, out_channels, stride=1):

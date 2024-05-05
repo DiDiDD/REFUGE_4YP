@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 from UTNET._UTNET_utlis import *
 
-import pdb
-
 
 class UTNet(nn.Module):
     def __init__(self, in_chan, base_chan, num_classes=3, reduce_size=8, block_list='234', num_blocks=[1, 2, 4],
